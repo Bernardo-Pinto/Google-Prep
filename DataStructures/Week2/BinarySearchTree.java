@@ -30,8 +30,11 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
 
         // while doing an inorder traversal and checking if the ouput is sorted works, 
         // it would require another O(n) operation and O(n) space
-        boolean inBoundary = node.value.compareTo(max) < 0 && node.value.compareTo(min) > 0;
-        if(!inBoundary) return false;
+
+        // null means unbounded
+        //
+        if(max != null && node.value.compareTo(max) >= 0) return false;
+        if(min != null && node.value.compareTo(min) <= 0) return false;
 
         if(node.left == null && node.right == null){
             return true;
@@ -42,6 +45,10 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
     }
 
     public boolean contains(T value){
+
+        if (this.root == null){
+            return false;
+        }
         // iterate using in-order
 
         Node curr = this.root;
@@ -64,82 +71,43 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
     }
 
     public boolean delete(T value){
-        //old delete works, but creates a bad tree structure
-        // the best way to do this is to keep the rules true, 
-        // but while also trying to minimize structural impact
-        // STEP 1: Find the Node with the value
+        if (this.root == null){
+            return false;
+        }
         Node curr = this.root;
         Node prev = null;
         boolean cameFromLeft = true;
         while(curr != null){
-            if(value.compareTo(curr.value) == 0) break;
-
+            int cmp = value.compareTo(curr.value);
+            if(cmp == 0) break;
             prev = curr;
-            if(value.compareTo(curr.value) < 0){
-                curr = curr.left;
-                cameFromLeft = true;
-            } else {
-                curr = curr.right;
-                cameFromLeft = false;
-            }
+            cameFromLeft = cmp < 0;
+            curr = cameFromLeft ? curr.left : curr.right;
         }
 
-        //value not found, return false because we didnt delete
         if(curr == null) return false;
-        Node toDelete = curr;
 
-        //if prev is null, we are dealing with the root node
-        if(prev == null){
-            if(toDelete.left == null && toDelete.right == null)
-            {
-                //root node without children
-                this.root = null;
-            } 
-            else if(toDelete.left == null){
-                this.root = toDelete.right;
-            } else if(toDelete.right == null){
-                this.root = curr.left;
-            } else {
-                // root node with both children
-                Node minNodeParent = null;
-                Node minNode = toDelete.right;
-                while(minNode.left != null){
-                    minNodeParent = minNode;
-                    minNode = minNode.left;
-                }
-                this.root.value = minNode.value;
-                if(minNodeParent != null) minNodeParent.left = minNode.right;
-                else this.root.right = minNode.right;
+        if(curr.left != null && curr.right != null){
+            // both children: copy in-order successor value, delete successor
+            Node minParent = null;
+            Node minNode = curr.right;
+            while(minNode.left != null){
+                minParent = minNode;
+                minNode = minNode.left;
             }
-         } else { //non root node
-            if(curr.left == null && curr.right == null)
-            {
-                if(cameFromLeft) prev.left = null;
-                else prev.right = null;
-            } 
-            else if(curr.left == null){
-                if(cameFromLeft) prev.left = curr.right;
-                else prev.right = curr.right;  
+            curr.value = minNode.value;
+            if(minParent != null) minParent.left = minNode.right;
+            else curr.right = minNode.right;
+            return true;
+        }
 
-            } else if(curr.right == null){
-                if(cameFromLeft) prev.left = curr.left;
-                else prev.right = curr.left;  
-            } else {
-                // non root node with both children
-                Node minNodeParent = null;
-                Node minNode = toDelete.right;
-                while(minNode.left != null){
-                    minNodeParent = minNode;
-                    minNode = minNode.left;
-                }
-                
-                toDelete.value = minNode.value;
-                if(minNodeParent != null) minNodeParent.left = minNode.right;
-                else toDelete.right = minNode.right;
-            } 
-         }
-         return true;
+        // 0 or 1 child: pick the surviving child (null if leaf)
+        Node replacement = (curr.left != null) ? curr.left : curr.right;
+        if(prev == null) this.root = replacement;
+        else if(cameFromLeft) prev.left = replacement;
+        else prev.right = replacement;
 
+        return true;
     }
 
     public boolean oldDelete(T value){
@@ -228,11 +196,15 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
     }
 
     public int getHeight(){
+        if (this.root == null){
+            return -1;
+        }
         //root node has height 0 because no edges
         return getHeight(this.root, 0);
     }
 
     private int getHeight(Node curr, int height){
+        
         //since this node is null and argument was given with height+1, we need to subtract 1
         // its faster than checking if left is null and right is null before calling
         // because its either leafs (2^maxHeight) do a single subtraction operation
@@ -243,6 +215,9 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
     }
 
     public T getMax(){
+        if (this.root == null){
+            return null;
+        }
         return getMax(root);
         //return oldGetMax(root, null);
     }
@@ -255,6 +230,9 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
     }
 
     public T getMin(){
+        if (this.root == null){
+            return null;
+        }
         return this.getMin(root);
     }
 
@@ -279,6 +257,10 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
     // return true if value is inserted, false it not
     public boolean add(T value){
         Node newNode = new Node(value);
+        if (this.root == null){
+            this.root = newNode;
+            return true;
+        }
         Node curr = this.root;
         Node prev = null;
         boolean insertLeft = true;
@@ -305,7 +287,7 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
         return true;
     }
 
-    private boolean testValidBFS(T[] values, T max, T min){
+    private boolean testValidBST(T[] values, T max, T min){
         
         Node root = new Node(values[0]);
         Node left1 = new Node(values[1]);
@@ -328,7 +310,7 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
         tree.add(11);
         tree.add(7);
         System.out.println("InOrder: " + tree.toStringInOrderDFSTraversal(tree.root));
-        System.out.println("ValidateBST:(true) " + tree.validateBST(tree.root, Integer.MAX_VALUE, Integer.MIN_VALUE));
+        System.out.println("ValidateBST:(true) " + tree.validateBST(tree.root, null, null));
         System.out.println("PreOrder: " + tree.toStringPreOrderDFSTraversal(tree.root));
         System.out.println("PostOrder: " + tree.toStringPostOrderDFSTraversal(tree.root));
         System.out.println("BFS: " + tree.toStringbfsTraversal(tree.root));
@@ -338,6 +320,10 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
         System.out.println("Contains 1?(true): " + tree.contains(1));
         System.out.println("GetHeight:(3) " + tree.getHeight());
         System.out.println("GetMax:(11) " + tree.getMax());
+        System.out.println("Delete 20: (false) " + tree.delete(20));
+        System.out.println("Delete 4: (true) " + tree.delete(4));
+        System.out.println("InOrder: (1,2,3,7,8,11) " + tree.toStringInOrderDFSTraversal(tree.root));
+        System.out.println("BFS:(1,7,3,8,2,11) " + tree.toStringbfsTraversal(tree.root));
 
         System.out.println("-------------Tree 2-------------");
         BinarySearchTree<Integer> tree2 = new BinarySearchTree<>(13);
@@ -350,7 +336,7 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
         tree2.add(18);
         tree2.add(17);
         System.out.println("InOrder: " + tree2.toStringInOrderDFSTraversal(tree2.root));
-        System.out.println("ValidateBST:(true) " + tree2.validateBST(tree2.root, Integer.MAX_VALUE, Integer.MIN_VALUE));
+        System.out.println("ValidateBST:(true) " + tree2.validateBST(tree2.root, null, null));
         System.out.println("PreOrder: " + tree2.toStringPreOrderDFSTraversal(tree2.root));
         System.out.println("PostOrder: " + tree2.toStringPostOrderDFSTraversal(tree2.root));
         System.out.println("BFS: " + tree2.toStringbfsTraversal(tree2.root));
@@ -363,7 +349,7 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
 
         Integer[] arr = new Integer[]{5,1,7,3};
         System.out.println("----Malconstructed tree----");
-        System.out.println("testValidateBFS:(false) " + tree.testValidBFS(arr, Integer.MAX_VALUE, Integer.MIN_VALUE));
+        System.out.println("testValidateBFS:(false) " + tree.testValidBST(arr, null, null));
     }
 
     public String toStringbfsTraversal(Node node){
@@ -388,13 +374,13 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
     private String toStringInOrderDFSTraversal(Node node){
         if (node == null) return "";
         return this.toStringInOrderDFSTraversal(node.left) + 
-            (node == null ? "" : node.value + ", ") + 
+            (node.value + ", ") + 
             this.toStringInOrderDFSTraversal(node.right);
     }
 
     private String toStringPreOrderDFSTraversal(Node node){
     if (node == null) return "";
-    return (node == null ? "" : node.value + ", ") + 
+    return (node.value + ", ") + 
         this.toStringPreOrderDFSTraversal(node.left) + 
         this.toStringPreOrderDFSTraversal(node.right);
     }
@@ -403,6 +389,6 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
         if (node == null) return "";
         return this.toStringPostOrderDFSTraversal(node.left) + 
             this.toStringPostOrderDFSTraversal(node.right) +
-            (node == null ? "" : node.value + ", ");
+            (node.value + ", ");
     }
 }
