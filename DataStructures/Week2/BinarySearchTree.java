@@ -43,7 +43,18 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
 
     public boolean contains(T value){
         // iterate using in-order
-        return containsInOrderTraversal(value, root);
+
+        Node curr = this.root;
+        while(curr != null){
+            if(value.compareTo(curr.value) == 0) return true;
+            else if(value.compareTo(curr.value) < 0){
+                curr = curr.left;
+            } else {
+                curr = curr.right;
+            }
+        }
+        return false;
+        //return containsInOrderTraversal(value, root); // OLD version
     }
 
     private boolean containsInOrderTraversal(T value, Node curr){
@@ -52,11 +63,168 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
         return containsInOrderTraversal(value, curr.left) || containsInOrderTraversal(value, curr.right);
     }
 
-    public void delete(T value){
+    public boolean delete(T value){
+        //old delete works, but creates a bad tree structure
+        // the best way to do this is to keep the rules true, 
+        // but while also trying to minimize structural impact
+        // STEP 1: Find the Node with the value
+        Node curr = this.root;
+        Node prev = null;
+        boolean cameFromLeft = true;
+        while(curr != null){
+            if(value.compareTo(curr.value) == 0) break;
+
+            prev = curr;
+            if(value.compareTo(curr.value) < 0){
+                curr = curr.left;
+                cameFromLeft = true;
+            } else {
+                curr = curr.right;
+                cameFromLeft = false;
+            }
+        }
+
+        //value not found, return false because we didnt delete
+        if(curr == null) return false;
+        Node toDelete = curr;
+
+        //if prev is null, we are dealing with the root node
+        if(prev == null){
+            if(toDelete.left == null && toDelete.right == null)
+            {
+                //root node without children
+                this.root = null;
+            } 
+            else if(toDelete.left == null){
+                this.root = toDelete.right;
+            } else if(toDelete.right == null){
+                this.root = curr.left;
+            } else {
+                // root node with both children
+                Node minNodeParent = null;
+                Node minNode = toDelete.right;
+                while(minNode.left != null){
+                    minNodeParent = minNode;
+                    minNode = minNode.left;
+                }
+                this.root.value = minNode.value;
+                if(minNodeParent != null) minNodeParent.left = minNode.right;
+                else this.root.right = minNode.right;
+            }
+         } else { //non root node
+            if(curr.left == null && curr.right == null)
+            {
+                if(cameFromLeft) prev.left = null;
+                else prev.right = null;
+            } 
+            else if(curr.left == null){
+                if(cameFromLeft) prev.left = curr.right;
+                else prev.right = curr.right;  
+
+            } else if(curr.right == null){
+                if(cameFromLeft) prev.left = curr.left;
+                else prev.right = curr.left;  
+            } else {
+                // non root node with both children
+                Node minNodeParent = null;
+                Node minNode = toDelete.right;
+                while(minNode.left != null){
+                    minNodeParent = minNode;
+                    minNode = minNode.left;
+                }
+                
+                toDelete.value = minNode.value;
+                if(minNodeParent != null) minNodeParent.left = minNode.right;
+                else toDelete.right = minNode.right;
+            } 
+         }
+         return true;
+
+    }
+
+    public boolean oldDelete(T value){
         // deleting a node should keep the BST constraints true:
         // 1 - all child left nodes must be lower than all its parents
         // 2 - all child right nodes must be bigger than all its parents 
+        
+        // STEP 1: Find the Node with the value - copy code from contains
+        Node curr = this.root;
+        Node prev = null;
+        boolean cameFromLeft = true;
+        while(curr != null){
+            if(value.compareTo(curr.value) == 0) break;
 
+            prev = curr;
+            if(value.compareTo(curr.value) < 0){
+                curr = curr.left;
+                cameFromLeft = true;
+            } else {
+                curr = curr.right;
+                cameFromLeft = false;
+            }
+        }
+
+        if(curr == null) return false;
+        Node toDelete = curr;
+        // we now have the matching value
+        
+        // Cases:
+        // 1- Right and left children of the deleted node exists:
+        // whole tree of right child goes into where the deleted value was
+        // whole tree of left child goes into the left of lowest value of of right tree
+        //2- Only right child exists: right child takes old place
+        //3- Only left child exists: left child takes old place
+        //4- No children: no need to do anything extra
+        
+        //if prev is null, we are dealing with the root node
+        if(prev == null){
+            if(toDelete.left == null && toDelete.right == null)
+            {
+                //root node without children
+                this.root = null;
+            } 
+            else if(toDelete.left == null){
+                this.root = toDelete.right;
+            } else if(toDelete.right == null){
+                this.root = curr.left;
+            } else {
+                // root node with both children
+                // whole tree of right child goes into where the deleted value was
+                this.root = toDelete.right;
+                // whole tree of left child goes into the left of lowest value of of right tree
+                Node minNode = getMinNode(toDelete.right);
+                minNode.left = toDelete.left;
+            }
+         } else { //non root node
+            if(curr.left == null && curr.right == null)
+            {
+                if(cameFromLeft) prev.left = null;
+                else prev.right = null;
+            } 
+            else if(curr.left == null){
+                if(cameFromLeft) prev.left = curr.right;
+                else prev.right = curr.right;  
+
+            } else if(curr.right == null){
+                if(cameFromLeft) prev.left = curr.left;
+                else prev.right = curr.left;  
+            } else {
+                // non root node with both children
+                Node minNode = getMinNode(toDelete.right);
+                if(cameFromLeft){
+                    prev.left = toDelete.right;
+                } else {
+                    prev.right = toDelete.right;
+                }
+                minNode.left = toDelete.left;
+            } 
+         }
+         return true;
+    }
+
+    private Node getMinNode(Node curr){
+        if(curr.left == null) return curr;
+        return getMinNode(curr.left);
     }
 
     public int getHeight(){
@@ -84,6 +252,15 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
         // always go right until we can't anymore.
         if(curr.right == null) return curr.value;
         return getMax(curr.right);
+    }
+
+    public T getMin(){
+        return this.getMin(root);
+    }
+
+    private T getMin(Node curr){
+        if(curr.left == null) return curr.value;
+        return getMin(curr.left);
     }
 
     private T oldGetMax(Node curr, T max){
