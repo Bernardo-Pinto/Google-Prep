@@ -1,4 +1,4 @@
-package DataStructures;
+package DataStructures.Week1;
 
 import java.util.Collection;
 

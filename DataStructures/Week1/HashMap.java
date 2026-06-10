@@ -1,4 +1,4 @@
-package DataStructures;
+package DataStructures.Week1;
 
 @SuppressWarnings("unchecked")
 public class HashMap<K,V> {
