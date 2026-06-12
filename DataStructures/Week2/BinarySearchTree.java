@@ -71,43 +71,54 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
     }
 
     public boolean delete(T value){
-        if (this.root == null){
-            return false;
-        }
+        if(this.root == null) return false;
+        
         Node curr = this.root;
         Node prev = null;
         boolean cameFromLeft = true;
         while(curr != null){
             int cmp = value.compareTo(curr.value);
-            if(cmp == 0) break;
+            if(cmp == 0) break; //found node
+
             prev = curr;
             cameFromLeft = cmp < 0;
             curr = cameFromLeft ? curr.left : curr.right;
         }
 
+        //value not found, return false because we are not going to delete
         if(curr == null) return false;
 
-        if(curr.left != null && curr.right != null){
-            // both children: copy in-order successor value, delete successor
+        if(curr.left != null && curr.right != null){ // has 2 children
+            //note that minParent starts at null
             Node minParent = null;
+            //we go right because the next bigger value has to be on the right 
+            // eg. if value to delete is 13, replace with 14, assuming it exists
             Node minNode = curr.right;
+            //and then we go left to the min value that is bigger than value to delete
             while(minNode.left != null){
                 minParent = minNode;
                 minNode = minNode.left;
             }
-            curr.value = minNode.value;
-            if(minParent != null) minParent.left = minNode.right;
-            else curr.right = minNode.right;
-            return true;
+
+            //swap value with found min value
+            curr.value = minNode.value; 
+            //if minParent is not null, then its not the root node
+            if(minParent != null){
+                //preserve the minNode's right tree
+                minParent.left = minNode.right;
+            } else {
+                //if minParent is null, it means that curr.right has no left child
+                // which also means curr.right is the next bigger number
+                //So we take its right tree in case it exists and preserve it
+                curr.right = minNode.right;
+            }
+        } else { // 0 or 1 children
+            Node replacement = curr.left != null ? curr.left : curr.right;
+            if(prev == null) this.root = replacement;
+            else if(cameFromLeft) prev.left = replacement;
+            else prev.right = replacement;
         }
-
-        // 0 or 1 child: pick the surviving child (null if leaf)
-        Node replacement = (curr.left != null) ? curr.left : curr.right;
-        if(prev == null) this.root = replacement;
-        else if(cameFromLeft) prev.left = replacement;
-        else prev.right = replacement;
-
-        return true;
+         return true;
     }
 
     public boolean oldDelete(T value){
