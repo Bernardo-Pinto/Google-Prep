@@ -1,8 +1,11 @@
 package DataStructures.Week1;
 
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
-public class SingleLinkedList<T> {
+public class SingleLinkedList<T> implements Iterable<T>{
 
     public class Node{
         public T element;
@@ -11,6 +14,26 @@ public class SingleLinkedList<T> {
         public Node(T element){
             this.element = element;
             this.next = null;
+        }
+    }
+
+    public Comparator<Node> nodeComparator(Comparator<T> elementComparator){
+        return (n1, n2) -> elementComparator.compare(n1.element, n2.element);
+    }
+
+    private class NodeIterator implements Iterator<T>{
+        Node curr = null;
+        int index = 0;
+
+        public boolean hasNext(){
+            return index < amountOfNodes;
+        }
+
+        public T next(){
+            if(!hasNext()) throw new NoSuchElementException();
+            curr = curr == null ? firstNode : curr.next;
+            index++;
+            return curr.element;
         }
     }
 
@@ -23,7 +46,11 @@ public class SingleLinkedList<T> {
         this.lastNode = null;
         this.amountOfNodes = 0;
     }
-    
+
+    public Iterator<T> iterator(){
+        return new NodeIterator();
+    }
+
     void add(int index, T element){
 
         //if I add at index 0 i should just call addFirst

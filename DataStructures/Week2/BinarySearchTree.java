@@ -7,20 +7,21 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
     
     // For all of the left sub-tree n nodes, n.left < n
     // For all of the right sub-tree n nodes, n.right > n
-    // what happens if the value is equal? we reject or add a field in the node (quantity or something similar)
 
-    public class Node{
+    protected class Node{
         Node left;
         Node right;
         T value;
+        int height;
         public Node(T value){
             this.left = null;
             this.right = null;
             this.value = value;
+            this.height = 1; //unused by the BST, but AVLTree needs this to be set to 1
         }
     }
 
-    private Node root;
+    protected Node root;
 
     public BinarySearchTree(T value){
         this.root = new Node(value);
@@ -32,7 +33,6 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
         // it would require another O(n) operation and O(n) space
 
         // null means unbounded
-        //
         if(max != null && node.value.compareTo(max) >= 0) return false;
         if(min != null && node.value.compareTo(min) <= 0) return false;
 
@@ -254,13 +254,32 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
         else return v1.compareTo(v2) > 0 ? v1 : v2;
     }
 
+    public boolean recursiveAdd(T value){
+  
+        if(contains(value)) return false;
+        this.root = addNode(root, value);
+        return true;
+    }
+
+    private Node addNode(Node currNode, T value){
+        if(currNode == null) return new Node(value);
+
+        int cmp = value.compareTo(currNode.value);
+        if(cmp < 0) currNode.left = addNode(currNode.left, value);
+        else if (cmp > 0) currNode.right = addNode(currNode.right, value);
+        return currNode;
+    }
+
     // return true if value is inserted, false it not
     public boolean add(T value){
+
         Node newNode = new Node(value);
+
         if (this.root == null){
             this.root = newNode;
             return true;
         }
+
         Node curr = this.root;
         Node prev = null;
         boolean insertLeft = true;
@@ -350,9 +369,30 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
         Integer[] arr = new Integer[]{5,1,7,3};
         System.out.println("----Malconstructed tree----");
         System.out.println("testValidateBFS:(false) " + tree.testValidBST(arr, null, null));
+
+        System.out.println("--------recursiveAdd----------");
+        BinarySearchTree<Integer> rtree = new BinarySearchTree<>(10);
+        // returns true on new values
+        System.out.println("recursiveAdd(5)  (expect true):  " + rtree.recursiveAdd(5));
+        System.out.println("recursiveAdd(15) (expect true):  " + rtree.recursiveAdd(15));
+        System.out.println("recursiveAdd(3)  (expect true):  " + rtree.recursiveAdd(3));
+        System.out.println("recursiveAdd(7)  (expect true):  " + rtree.recursiveAdd(7));
+        System.out.println("recursiveAdd(12) (expect true):  " + rtree.recursiveAdd(12));
+        System.out.println("recursiveAdd(20) (expect true):  " + rtree.recursiveAdd(20));
+        // returns false on duplicate
+        System.out.println("recursiveAdd(10) (expect false): " + rtree.recursiveAdd(10));
+        System.out.println("recursiveAdd(7)  (expect false): " + rtree.recursiveAdd(7));
+        // tree is still a valid BST after all inserts
+        System.out.println("InOrder (expect 3,5,7,10,12,15,20): " + rtree.toStringInOrderDFSTraversal(rtree.root));
+        System.out.println("ValidateBST (expect true): " + rtree.validateBST(rtree.root, null, null));
+        // add on empty tree (after deleting root of single-node tree)
+        BinarySearchTree<Integer> emptyTree = new BinarySearchTree<>(1);
+        emptyTree.delete(1);
+        System.out.println("recursiveAdd to empty tree (expect true): " + emptyTree.recursiveAdd(42));
+        System.out.println("contains 42 (expect true): " + emptyTree.contains(42));
     }
 
-    public String toStringbfsTraversal(Node node){
+    protected String toStringbfsTraversal(Node node){
 
         StringBuilder sb = new StringBuilder();
         Queue<Node> queue = new LinkedList<>();
@@ -370,22 +410,21 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
         return sb.substring(0, sb.length()-2).toString();
     }
 
-
-    private String toStringInOrderDFSTraversal(Node node){
+    protected String toStringInOrderDFSTraversal(Node node){
         if (node == null) return "";
         return this.toStringInOrderDFSTraversal(node.left) + 
             (node.value + ", ") + 
             this.toStringInOrderDFSTraversal(node.right);
     }
 
-    private String toStringPreOrderDFSTraversal(Node node){
+    protected String toStringPreOrderDFSTraversal(Node node){
     if (node == null) return "";
     return (node.value + ", ") + 
         this.toStringPreOrderDFSTraversal(node.left) + 
         this.toStringPreOrderDFSTraversal(node.right);
     }
 
-    private String toStringPostOrderDFSTraversal(Node node){
+    protected String toStringPostOrderDFSTraversal(Node node){
         if (node == null) return "";
         return this.toStringPostOrderDFSTraversal(node.left) + 
             this.toStringPostOrderDFSTraversal(node.right) +

@@ -1,10 +1,17 @@
 package DataStructures.Week1;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
+import DataStructures.Week1.SingleLinkedList.Node;
 
 public class Test {
     public static void main(String args[]){
-        testPriorityQueue();
+        testSingleLinkedList();
     }
 
     static void testPriorityQueue(){
@@ -280,9 +287,17 @@ public class Test {
 
     static void testSingleLinkedList(){
 
-        // --- Creation ---
+        // // --- Creation ---
         System.out.println("=== Creation ===");
         SingleLinkedList<Integer> list = new SingleLinkedList<>();
+        Iterator<Integer> it = list.iterator();
+        try{
+            Integer v = it.next();
+            System.out.println("Is v null?: (true) " + (v==null));
+        } catch(NoSuchElementException nse){
+            System.out.println("Exception: Iterator does not have next: " + nse.toString());
+        }
+        System.out.println("Does it have a next? (false) " + it.hasNext());
         System.out.println("Size (expect 0): " + list.size());
         System.out.println("ToString empty (expect ''): '" + list.toString() + "'");
 
@@ -304,62 +319,76 @@ public class Test {
         list.add(0, 88);
         System.out.println("After add(0, 88) (expect 88, 0, 1, 2, 99, 3, 4, 5): " + list.toString());
 
-        // --- get ---
-        System.out.println("\n=== get ===");
-        System.out.println("get(0) (expect 88): " + list.get(0).element);
-        System.out.println("get(4) (expect 99): " + list.get(4).element);
-        System.out.println("get(last=" + (list.size()-1) + ") (expect 5): " + list.get(list.size()-1).element);
+        System.out.println("-------Comparator test------");
+        Comparator<SingleLinkedList<Integer>.Node> nodeComparator = list.nodeComparator((e1,e2) -> e2.compareTo(e1));
+        SingleLinkedList<Integer>.Node nodeA = list.new Node(3);
+        SingleLinkedList<Integer>.Node nodeB = list.new Node(7);
+        System.out.println("compare(3, 7) (expect negative): " + nodeComparator.compare(nodeA, nodeB));
+        System.out.println("compare(7, 3) (expect positive): " + nodeComparator.compare(nodeB, nodeA));
+        System.out.println("compare(3, 3) (expect 0): " + nodeComparator.compare(nodeA, nodeA));
+        // // --- get ---
+        // System.out.println("\n=== get ===");
+        // System.out.println("get(0) (expect 88): " + list.get(0).element);
+        // System.out.println("get(4) (expect 99): " + list.get(4).element);
+        // System.out.println("get(last=" + (list.size()-1) + ") (expect 5): " + list.get(list.size()-1).element);
 
-        // --- contains ---
-        System.out.println("\n=== contains ===");
-        System.out.println("contains(99) (expect true): " + list.contains(99));
-        System.out.println("contains(5) last node (expect true): " + list.contains(5));
-        System.out.println("contains(42) (expect false): " + list.contains(42));
+        // // --- contains ---
+        // System.out.println("\n=== contains ===");
+        // System.out.println("contains(99) (expect true): " + list.contains(99));
+        // System.out.println("contains(5) last node (expect true): " + list.contains(5));
+        // System.out.println("contains(42) (expect false): " + list.contains(42));
 
-        // --- indexOf ---
-        System.out.println("\n=== indexOf ===");
-        System.out.println("indexOf(88) (expect 0): " + list.indexOf(88));
-        System.out.println("indexOf(99) (expect 4): " + list.indexOf(99));
+        // // --- indexOf ---
+        // System.out.println("\n=== indexOf ===");
+        // System.out.println("indexOf(88) (expect 0): " + list.indexOf(88));
+        // System.out.println("indexOf(99) (expect 4): " + list.indexOf(99));
 
-        // --- removeFirst ---
-        System.out.println("\n=== removeFirst ===");
-        list.removeFirst();
-        System.out.println("After removeFirst (expect 0, 1, 2, 99, 3, 4, 5): " + list.toString());
+        // // --- removeFirst ---
+        // System.out.println("\n=== removeFirst ===");
+        // list.removeFirst();
+        // System.out.println("After removeFirst (expect 0, 1, 2, 99, 3, 4, 5): " + list.toString());
 
-        // --- removeLast ---
-        System.out.println("\n=== removeLast ===");
-        list.removeLast();
-        System.out.println("After removeLast (expect 0, 1, 2, 99, 3, 4): " + list.toString());
+        // // --- removeLast ---
+        // System.out.println("\n=== removeLast ===");
+        // list.removeLast();
+        // System.out.println("After removeLast (expect 0, 1, 2, 99, 3, 4): " + list.toString());
 
-        // --- removeByIndex ---
-        System.out.println("\n=== removeByIndex ===");
-        list.removeByIndex(3); // remove 99
-        System.out.println("After removeByIndex(3) remove 99 (expect 0, 1, 2, 3, 4): " + list.toString());
-        list.removeByIndex(0); // remove first
-        System.out.println("After removeByIndex(0) (expect 1, 2, 3, 4): " + list.toString());
-        list.removeByIndex(list.size()-1); // remove last
-        System.out.println("After removeByIndex(last) (expect 1, 2, 3): " + list.toString());
+        // // --- removeByIndex ---
+        // System.out.println("\n=== removeByIndex ===");
+        // list.removeByIndex(3); // remove 99
+        // System.out.println("After removeByIndex(3) remove 99 (expect 0, 1, 2, 3, 4): " + list.toString());
+        // list.removeByIndex(0); // remove first
+        // System.out.println("After removeByIndex(0) (expect 1, 2, 3, 4): " + list.toString());
+        // list.removeByIndex(list.size()-1); // remove last
+        // System.out.println("After removeByIndex(last) (expect 1, 2, 3): " + list.toString());
 
-        // --- remove(T) ---
-        System.out.println("\n=== remove(T) ===");
-        list.add(9);
-        System.out.println("After add 9 (expect 1, 2, 3, 9): " + list.toString());
-        list.remove(2); // middle
-        System.out.println("After remove(2) middle (expect 1, 3, 9): " + list.toString());
-        list.remove(9); // last node
-        System.out.println("After remove(9) last (expect 1, 3): " + list.toString());
-        list.remove(1); // first node
-        System.out.println("After remove(1) first (expect 3): " + list.toString());
+        // // --- remove(T) ---
+        // System.out.println("\n=== remove(T) ===");
+        // list.add(9);
+        // System.out.println("After add 9 (expect 1, 2, 3, 9): " + list.toString());
+        // list.remove(2); // middle
+        // System.out.println("After remove(2) middle (expect 1, 3, 9): " + list.toString());
+        // list.remove(9); // last node
+        // System.out.println("After remove(9) last (expect 1, 3): " + list.toString());
+        // list.remove(1); // first node
+        // System.out.println("After remove(1) first (expect 3): " + list.toString());
 
-        // --- single element edge cases ---
-        System.out.println("\n=== Single element edge cases ===");
-        SingleLinkedList<String> single = new SingleLinkedList<>();
-        single.add("only");
-        System.out.println("Single element toString (expect only): " + single.toString());
-        System.out.println("contains 'only' (expect true): " + single.contains("only"));
-        single.removeLast();
-        System.out.println("After removeLast on single element, size (expect 0): " + single.size());
-        System.out.println("ToString after empty (expect ''): '" + single.toString() + "'");
+        // // --- single element edge cases ---
+        // System.out.println("\n=== Single element edge cases ===");
+        // SingleLinkedList<String> single = new SingleLinkedList<>();
+        // single.add("only");
+        // System.out.println("Single element toString (expect only): " + single.toString());
+        // System.out.println("contains 'only' (expect true): " + single.contains("only"));
+        // single.removeLast();
+        // System.out.println("After removeLast on single element, size (expect 0): " + single.size());
+        // System.out.println("ToString after empty (expect ''): '" + single.toString() + "'");
+
+        System.out.println("Test iterator: ");
+        while(it.hasNext()){
+            Integer next = it.next();
+            if(it.hasNext())System.out.print(next + ", ");
+            else System.out.print(next);
+        }
     }
 
     static void testArrayList(){
