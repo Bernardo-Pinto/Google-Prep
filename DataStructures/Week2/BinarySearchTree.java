@@ -1,7 +1,10 @@
 package DataStructures.Week2;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
+
 
 public class BinarySearchTree<T extends Comparable<? super T>> {
     
@@ -345,6 +348,8 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
     }
 
     public static void main(String[] args) {
+
+        
         System.out.println("--------Tree 1----------");
         BinarySearchTree<Integer> tree = new BinarySearchTree<>(1);
         tree.add(4);
@@ -358,63 +363,103 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
         System.out.println("PreOrder: " + tree.toStringPreOrderDFSTraversal(tree.root));
         System.out.println("PostOrder: " + tree.toStringPostOrderDFSTraversal(tree.root));
         System.out.println("BFS: " + tree.toStringbfsTraversal(tree.root));
-        System.out.println("Contains 3?(true): " + tree.contains(3));
-        System.out.println("Contains 11?(true): " + tree.contains(11));
-        System.out.println("Contains 9?(false): " + tree.contains(9));
-        System.out.println("Contains 1?(true): " + tree.contains(1));
-        System.out.println("GetHeight:(3) " + tree.getHeight());
-        System.out.println("GetMax:(11) " + tree.getMax());
-        System.out.println("Delete 20: (false) " + tree.delete(20));
-        System.out.println("Delete 4: (true) " + tree.delete(4));
-        System.out.println("InOrder: (1,2,3,7,8,11) " + tree.toStringInOrderDFSTraversal(tree.root));
-        System.out.println("BFS:(1,7,3,8,2,11) " + tree.toStringbfsTraversal(tree.root));
 
-        System.out.println("-------------Tree 2-------------");
-        BinarySearchTree<Integer> tree2 = new BinarySearchTree<>(13);
-        tree2.add(7);
-        tree2.add(3);
-        tree2.add(8);
-        tree2.add(15);
-        tree2.add(14);
-        tree2.add(19);
-        tree2.add(18);
-        tree2.add(17);
-        System.out.println("InOrder: " + tree2.toStringInOrderDFSTraversal(tree2.root));
-        System.out.println("ValidateBST:(true) " + tree2.validateBST(tree2.root, null, null));
-        System.out.println("PreOrder: " + tree2.toStringPreOrderDFSTraversal(tree2.root));
-        System.out.println("PostOrder: " + tree2.toStringPostOrderDFSTraversal(tree2.root));
-        System.out.println("BFS: " + tree2.toStringbfsTraversal(tree2.root));
-        System.out.println("Contains 15?(true): " + tree2.contains(15));
-        System.out.println("Contains 11?(false): " + tree2.contains(11));
-        System.out.println("Contains 9?(false): " + tree2.contains(9));
-        System.out.println("Contains 1?(false): " + tree2.contains(1));
-        System.out.println("GetHeight:(4) " + tree2.getHeight());
-        System.out.println("GetMax:(19) " + tree2.getMax());
+        System.out.println("\n--- getInverted tests ---");
 
-        Integer[] arr = new Integer[]{5,1,7,3};
-        System.out.println("----Malconstructed tree----");
-        System.out.println("testValidateBFS:(false) " + tree.testValidBST(arr, null, null));
+        // single node: inverted is the same single node
+        BinarySearchTree<Integer> inv1 = new BinarySearchTree<>(42);
+        var inv1Root = inv1.getInverted(inv1.root);
+        System.out.println("Single node (expect 42): " +
+            inv1.toStringInOrderDFSTraversal(inv1Root).trim());
 
-        System.out.println("--------recursiveAdd----------");
-        BinarySearchTree<Integer> rtree = new BinarySearchTree<>(10);
-        // returns true on new values
-        System.out.println("recursiveAdd(5)  (expect true):  " + rtree.recursiveAdd(5));
-        System.out.println("recursiveAdd(15) (expect true):  " + rtree.recursiveAdd(15));
-        System.out.println("recursiveAdd(3)  (expect true):  " + rtree.recursiveAdd(3));
-        System.out.println("recursiveAdd(7)  (expect true):  " + rtree.recursiveAdd(7));
-        System.out.println("recursiveAdd(12) (expect true):  " + rtree.recursiveAdd(12));
-        System.out.println("recursiveAdd(20) (expect true):  " + rtree.recursiveAdd(20));
-        // returns false on duplicate
-        System.out.println("recursiveAdd(10) (expect false): " + rtree.recursiveAdd(10));
-        System.out.println("recursiveAdd(7)  (expect false): " + rtree.recursiveAdd(7));
-        // tree is still a valid BST after all inserts
-        System.out.println("InOrder (expect 3,5,7,10,12,15,20): " + rtree.toStringInOrderDFSTraversal(rtree.root));
-        System.out.println("ValidateBST (expect true): " + rtree.validateBST(rtree.root, null, null));
-        // add on empty tree (after deleting root of single-node tree)
-        BinarySearchTree<Integer> emptyTree = new BinarySearchTree<>(1);
-        emptyTree.delete(1);
-        System.out.println("recursiveAdd to empty tree (expect true): " + emptyTree.recursiveAdd(42));
-        System.out.println("contains 42 (expect true): " + emptyTree.contains(42));
+        // 3-node tree: root=10, left=5, right=15
+        // inverted should have: root=10, left=15, right=5
+        // in-order of inverted: 15, 10, 5
+        BinarySearchTree<Integer> inv2 = new BinarySearchTree<>(10);
+        inv2.add(5); inv2.add(15);
+        var inv2Root = inv2.getInverted(inv2.root);
+        System.out.println("3-node original in-order (expect 5, 10, 15): " + inv2.toStringInOrderDFSTraversal(inv2.root));
+        System.out.println("3-node inverted in-order (expect 15, 10, 5): " + inv2.toStringInOrderDFSTraversal(inv2Root));
+        System.out.println("3-node inverted BFS      (expect 10, 15, 5): " + inv2.toStringbfsTraversal(inv2Root));
+
+        // original should be unchanged
+        System.out.println("Original unmodified      (expect 5, 10, 15): " + inv2.toStringInOrderDFSTraversal(inv2.root));
+
+        // larger tree: 10,5,15,3,7,12,20
+        // in-order original:  3,5,7,10,12,15,20
+        // in-order inverted: 20,15,12,10,7,5,3
+        BinarySearchTree<Integer> inv3 = new BinarySearchTree<>(10);
+        inv3.add(5); inv3.add(15); inv3.add(3); inv3.add(7); inv3.add(12); inv3.add(20);
+        var inv3Root = inv3.getInverted(inv3.root);
+        System.out.println("Large original in-order  (expect 3,5,7,10,12,15,20): " + inv3.toStringInOrderDFSTraversal(inv3.root));
+        System.out.println("Large inverted in-order  (expect 20,15,12,10,7,5,3): " + inv3.toStringInOrderDFSTraversal(inv3Root));
+        // System.out.println("Contains 3?(true): " + tree.contains(3));
+        // System.out.println("Contains 11?(true): " + tree.contains(11));
+        // System.out.println("Contains 9?(false): " + tree.contains(9));
+        // System.out.println("Contains 1?(true): " + tree.contains(1));
+        // System.out.println("GetHeight:(3) " + tree.getHeight());
+        // System.out.println("GetMax:(11) " + tree.getMax());
+        // System.out.println("Delete 20: (false) " + tree.delete(20));
+        // System.out.println("Delete 4: (true) " + tree.delete(4));
+        // System.out.println("InOrder: (1,2,3,7,8,11) " + tree.toStringInOrderDFSTraversal(tree.root));
+        // System.out.println("BFS:(1,7,3,8,2,11) " + tree.toStringbfsTraversal(tree.root));
+        
+        // System.out.println("-------------Tree 2-------------");
+        // BinarySearchTree<Integer> tree2 = new BinarySearchTree<>(13);
+        // tree2.add(7);
+        // tree2.add(3);
+        // tree2.add(8);
+        // tree2.add(15);
+        // tree2.add(14);
+        // tree2.add(19);
+        // tree2.add(18);
+        // tree2.add(17);
+        // System.out.println("InOrder: " + tree2.toStringInOrderDFSTraversal(tree2.root));
+        // System.out.println("ValidateBST:(true) " + tree2.validateBST(tree2.root, null, null));
+        // System.out.println("PreOrder: " + tree2.toStringPreOrderDFSTraversal(tree2.root));
+        // System.out.println("PostOrder: " + tree2.toStringPostOrderDFSTraversal(tree2.root));
+        // System.out.println("BFS: " + tree2.toStringbfsTraversal(tree2.root));
+        // System.out.println("Contains 15?(true): " + tree2.contains(15));
+        // System.out.println("Contains 11?(false): " + tree2.contains(11));
+        // System.out.println("Contains 9?(false): " + tree2.contains(9));
+        // System.out.println("Contains 1?(false): " + tree2.contains(1));
+        // System.out.println("GetHeight:(4) " + tree2.getHeight());
+        // System.out.println("GetMax:(19) " + tree2.getMax());
+
+        // Integer[] arr = new Integer[]{5,1,7,3};
+        // System.out.println("----Malconstructed tree----");
+        // System.out.println("testValidateBFS:(false) " + tree.testValidBST(arr, null, null));
+
+        // System.out.println("--------recursiveAdd----------");
+        // BinarySearchTree<Integer> rtree = new BinarySearchTree<>(10);
+        // // returns true on new values
+        // System.out.println("recursiveAdd(5)  (expect true):  " + rtree.recursiveAdd(5));
+        // System.out.println("recursiveAdd(15) (expect true):  " + rtree.recursiveAdd(15));
+        // System.out.println("recursiveAdd(3)  (expect true):  " + rtree.recursiveAdd(3));
+        // System.out.println("recursiveAdd(7)  (expect true):  " + rtree.recursiveAdd(7));
+        // System.out.println("recursiveAdd(12) (expect true):  " + rtree.recursiveAdd(12));
+        // System.out.println("recursiveAdd(20) (expect true):  " + rtree.recursiveAdd(20));
+        // // returns false on duplicate
+        // System.out.println("recursiveAdd(10) (expect false): " + rtree.recursiveAdd(10));
+        // System.out.println("recursiveAdd(7)  (expect false): " + rtree.recursiveAdd(7));
+        // // tree is still a valid BST after all inserts
+        // System.out.println("InOrder (expect 3,5,7,10,12,15,20): " + rtree.toStringInOrderDFSTraversal(rtree.root));
+        // System.out.println("ValidateBST (expect true): " + rtree.validateBST(rtree.root, null, null));
+        // // add on empty tree (after deleting root of single-node tree)
+        // BinarySearchTree<Integer> emptyTree = new BinarySearchTree<>(1);
+        // emptyTree.delete(1);
+        // System.out.println("recursiveAdd to empty tree (expect true): " + emptyTree.recursiveAdd(42));
+        // System.out.println("contains 42 (expect true): " + emptyTree.contains(42));
+    }
+
+    
+    public Node getInverted(Node node){
+        if(node == null) return node;
+        
+        Node newNode = new Node(node.value);
+        newNode.left = getInverted(node.right);
+        newNode.right = getInverted(node.left);
+        return newNode;
     }
 
     protected String toStringbfsTraversal(Node node){
