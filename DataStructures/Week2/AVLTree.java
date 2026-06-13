@@ -114,8 +114,7 @@ public class AVLTree<T extends Comparable<? super T>> extends BinarySearchTree<T
         else { //found node with same value
             if(currNode.left == null){
                 // save the right tree from deleted node into parent
-                Node deletedRight = currNode.right;
-                return deletedRight;
+                return currNode.right;
             } else if(currNode.right == null){
                 Node deletedLeft = currNode.left;
                 return deletedLeft;
@@ -155,14 +154,6 @@ public class AVLTree<T extends Comparable<? super T>> extends BinarySearchTree<T
             }
         }
         return currNode;
-    }
-
-    private Node findNextMinNode(Node node){
-        Node curr = node;        
-        while(curr.left != null){
-            curr = curr.left;
-        }
-        return curr;
     }
 
     public static void main(String[] args){

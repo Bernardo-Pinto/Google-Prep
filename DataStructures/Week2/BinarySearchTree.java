@@ -8,16 +8,22 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
     // For all of the left sub-tree n nodes, n.left < n
     // For all of the right sub-tree n nodes, n.right > n
 
+    protected enum Color{
+        RED,
+        BLACK
+    }
     protected class Node{
         Node left;
         Node right;
         T value;
-        int height;
+        int height; //unused by the BST, but AVLTree needs this to be set to 1
+        Color color; // used only by BRTree
         public Node(T value){
             this.left = null;
             this.right = null;
             this.value = value;
-            this.height = 1; //unused by the BST, but AVLTree needs this to be set to 1
+            this.height = 1; 
+            this.color = Color.RED;
         }
     }
 
@@ -119,6 +125,14 @@ public class BinarySearchTree<T extends Comparable<? super T>> {
             else prev.right = replacement;
         }
          return true;
+    }
+
+    protected Node findNextMinNode(Node node){
+        Node curr = node;        
+        while(curr.left != null){
+            curr = curr.left;
+        }
+        return curr;
     }
 
     public boolean oldDelete(T value){
