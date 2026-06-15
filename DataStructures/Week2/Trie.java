@@ -48,19 +48,31 @@ public class Trie {
     }
 
     public boolean wildCardSearch(String word){
-        return wSearch(word, root);
+        //return wSearch(word, root);
+        return recurWcSrc(word, 0, root);
     }
-    
-    private boolean wSearch(String word, Node curr){
-        for(char c : word.toCharArray()){
-            // handle if c == '.'
-            int charIndex = getNodeIndexFromASCIIChar(c);
-            curr = (Node)curr.nodes[charIndex];
-            if(curr == null){
-                return false;
-            }
+
+    private boolean recurWcSrc(String word,int index, Node node){
+        if(node == null) return false;
+        if(index == word.length()){
+            if(node.isEndOfWord) return true;
+            else return false;
         }
-        return curr.isEndOfWord;
+        char currentChar = word.charAt(index);
+        boolean found = false;
+        if(currentChar == '.'){
+            for(Object o : node.nodes){
+                if(o != null){
+                    found = found || recurWcSrc(word, index+1, (Node)o);
+                }
+                if (found) break;
+            }
+        } else {
+            int charIndex = getNodeIndexFromASCIIChar(word.charAt(index));
+            Node nextNode = (Node)node.nodes[charIndex];
+            found = recurWcSrc(word, index+1, nextNode);
+        }
+        return found;
     }
 
 
@@ -323,5 +335,29 @@ public class Trie {
        check("countWordsWithPrefix 'bat'  = 1", t2.countWordsWithPrefix("bat")  == 1);
        check("countWordsWithPrefix 'xyz'  = 0", t2.countWordsWithPrefix("xyz")  == 0);
        check("countWordsWithPrefix ''     = 5", t2.countWordsWithPrefix("")     == 5);  // all words
+
+       // ── wildCardSearch ───────────────────────────────────────────────────
+       Trie w = new Trie(26);
+       w.insert("apple"); w.insert("app"); w.insert("application"); w.insert("bat"); w.insert("ball");
+
+       // single '.' in the middle
+       check("wildcard 'app.e'     (true)",   w.wildCardSearch("app.e")); // matches 'apple'
+       check("wildcard 'b.ll'      (true)",   w.wildCardSearch("b.ll"));  // matches 'ball'
+       check("wildcard 'b.t'       (true)",   w.wildCardSearch("b.t"));   // matches 'bat'
+       check("wildcard 'ba.'       (true)",   w.wildCardSearch("ba."));   // matches 'bat' ('ball' is 4 chars)
+
+       // multiple '.' wildcards
+       check("wildcard 'a..le'     (true)",   w.wildCardSearch("a..le")); // matches 'apple'
+       check("wildcard '...'       (true)",   w.wildCardSearch("..."));   // matches 'app' and 'bat'
+       check("wildcard '....'      (true)",   w.wildCardSearch("...."));  // matches 'ball'
+       check("wildcard '.....'     (true)",   w.wildCardSearch(".....")); // matches 'apple'
+
+       // wildcard that matches exact word
+       check("wildcard '..p'       (true)",   w.wildCardSearch("..p"));   // matches 'app'
+
+       // no match cases
+       check("wildcard 'a..x'      (false)", !w.wildCardSearch("a..x"));  // no word ends in 'x' at length 4
+       check("wildcard 'xyz'       (false)", !w.wildCardSearch("xyz"));   // no such word
+       check("wildcard '......'    (false)", !w.wildCardSearch("......")); // no 6-char words inserted
     }
 }
