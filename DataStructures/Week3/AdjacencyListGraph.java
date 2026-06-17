@@ -1,42 +1,51 @@
 package DataStructures.Week3;
 
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
-public class AdjacencyMatrixGraph {
- 
-    private int size;
-    private List<String> vertices;
-    private List<List<Integer>> matrix; 
+public class AdjacencyListGraph {
 
-    public AdjacencyMatrixGraph(){
-        this.size = 0;
-        this.matrix = new ArrayList<>();
-        this.vertices = new ArrayList<>();
+
+    private class Edge{
+        public int weight;
+        public String dest;
+        public Edge(int w, String dest){
+            this.dest = dest;
+            this.weight = w;
+        }
+    }
+
+    private Map<String, List<Edge>> edges; 
+
+    public AdjacencyListGraph(){
+        this.edges = new HashMap<>();
     }
 
     public boolean addVertex(String vertex){
-        if(vertices.contains(vertex)) return false;
-        this.vertices.add(vertex);
-        this.matrix.add(new ArrayList<>());
-        size++;
-        for(List<Integer> li : matrix){
-            while(li.size() < this.size){
-                li.add(0);
-            }
-        }
+        if(this.edges.containsKey(vertex)) return false;
+        this.edges.put(vertex, new ArrayList<>());
         return true;
     }
 
     public boolean addEdge(String origin, String dest, int weight){
         if(weight < 0) return false;
-        int originIndex = vertices.indexOf(origin);
-        int destIndex = vertices.indexOf(dest);
-        if(!checkBounds(originIndex,destIndex)) return false;
-        matrix.get(originIndex).set(destIndex, weight);
+        List<Edge> vertexEdges = edges.get(origin);
+        if(vertexEdges == null) return false;
+        Edge originToDestEdge = vertexEdges.stream()
+            .filter(e -> e.dest.equals(dest))
+            .findFirst()
+            .orElse(null);
+        if(originToDestEdge != null){
+            originToDestEdge.weight = weight;
+        } else {
+            vertexEdges.add(new Edge(weight, dest));
+        }
         return true;
     }
 
@@ -45,16 +54,14 @@ public class AdjacencyMatrixGraph {
     }
 
     public int getEdge(String origin, String dest){
-        int originIndex = vertices.indexOf(origin);
-        int destIndex = vertices.indexOf(dest);
-        if(!checkBounds(originIndex, destIndex)) return 0;
-        return matrix.get(originIndex).get(destIndex);
-    }
-
-    boolean checkBounds(int originIndex, int destIndex){
-        if(originIndex < 0 || originIndex > size-1 || 
-            destIndex < 0 || destIndex > size-1) return false;
-        return true;
+        if(!edges.containsKey(origin)) return 0;
+        List<Edge> originEdges = edges.get(origin);
+        Edge originDestEdge = originEdges.stream()
+            .filter( e -> e.dest.equals(dest))
+            .findFirst()
+            .orElse(null);
+        if(originDestEdge == null) return 0;
+        return originDestEdge.weight;
     }
 
     public String printGraphBFS(String vertex){
@@ -68,35 +75,34 @@ public class AdjacencyMatrixGraph {
             vertex = queue.poll();
             result += vertex;
             
-            for(int i=0; i < size;i++){
-                int value = getEdge(vertex, vertices.get(i));
-                if(value > 0 && !visited.contains(vertices.get(i))){
-                    queue.offer(vertices.get(i));
-                    visited.add(vertices.get(i));
+            List<Edge> vertexEdges = this.edges.get(vertex);
+            for(Edge e : vertexEdges){
+                int weight = e.weight;
+                if(weight > 0 && !visited.contains(e.dest)){
+                    queue.offer(e.dest);
+                    visited.add(e.dest);
                 }
             }
+
         }
         return result;
     }
 
     public String printGraphDFS(String vertex){
-        HashSet<String> set = new HashSet<>();
-        set.add(vertex);
-        return graphDFSToString(vertex,set);
+        HashSet<String> visited = new HashSet<>();
+        visited.add(vertex);
+        return graphDFSToString(vertex,visited);
     }
 
     private String graphDFSToString(String vertex, HashSet<String> visited){
-        int originIndex = vertices.indexOf(vertex);
-        if(originIndex == -1) return "";
+        if(!edges.containsKey(vertex)) return "";
         String result = "";
-        // in case i want to return weights
-        // List<Integer> edges = matrix.get(originIndex);
-        for(int i = 0; i < size; i++){
-            String nextVertex = vertices.get(i);
-            boolean hasEdge = this.getEdge(vertex, nextVertex) > 0;
-            if(!vertex.equals(nextVertex) && !visited.contains(nextVertex) && hasEdge){
-                visited.add(nextVertex);
-                result += graphDFSToString(nextVertex, visited);
+        
+        List<Edge> vertexEdges = edges.get(vertex);
+        for(Edge e : vertexEdges){
+            if(!e.dest.equals(vertex) && e.weight > 0 && !visited.contains(e.dest)){
+                visited.add(e.dest);
+                result += graphDFSToString(e.dest, visited);
             }
         }
         return vertex + result;
@@ -108,46 +114,39 @@ public class AdjacencyMatrixGraph {
     }
 
     private boolean isUDCyclicDFS(){
-        boolean isCyclic = false;
-        for(int i=0;i<size;i++){
-            String currVertex = vertices.get(i);
-            for(int j = 0;j<size;j++){
-
-                String nextNode = vertices.get(j);
-                if(getEdge(currVertex, nextNode)>0){
-                    HashSet<String> visited = new HashSet<>();
-                    visited.add(currVertex);
-                    isCyclic = isCyclic || isUDCyclicDFSHelper(nextNode,currVertex, visited);
+        for(Map.Entry<String,List<Edge>> entry  : edges.entrySet()){
+            for(Edge e : entry.getValue()){
+                if(e.weight > 0){
+                    HashSet<String> visited =  new HashSet<>();
+                    visited.add(entry.getKey());
+                    if(isUDCyclicDFSHelper(e.dest, entry.getKey(), visited)) return true;
                 }
             }
         }
-        return isCyclic;
+        return false;
     }
 
     private boolean isUDCyclicDFSHelper(String vertex,String parent, HashSet<String> visited){
         if(visited.contains(vertex)) return true;
-        for(int j = 0;j<size;j++){
-            String nextNode = vertices.get(j);
-            if(nextNode.equals(parent)) continue;
-            if(getEdge(vertex, nextNode)>0){
+        for(Edge e : edges.get(vertex)){
+            if(parent.equals(e.dest)) continue;
+            if(e.weight > 0) {
                 visited.add(vertex);
-                if(isUDCyclicDFSHelper(nextNode, vertex, visited)) return true;
+                if(isUDCyclicDFSHelper(e.dest, vertex, visited)) return true;
             }
         }
         return false;
     }
 
     private boolean isDCyclicDFS(){
-        for(int i=0;i<size;i++){
-            String currVertex = vertices.get(i);
-            for(int j = 0;j<size;j++){
-                String nextNode = vertices.get(j);
-                if(getEdge(currVertex, nextNode)>0){
+        for(Map.Entry<String,List<Edge>> entry : edges.entrySet()){
+            for(Edge e : entry.getValue()){
+                if(e.weight>0){
                     HashSet<String> visited = new HashSet<>();
                     HashSet<String> path = new HashSet<>();
-                    visited.add(currVertex);
-                    path.add(currVertex);
-                    if(isDCyclicDFSHelper(nextNode, visited, path)) return true;
+                    visited.add(entry.getKey());
+                    path.add(entry.getKey());
+                    if(isDCyclicDFSHelper(e.dest, visited, path)) return true;
                 }
             }
         }
@@ -156,14 +155,13 @@ public class AdjacencyMatrixGraph {
 
     private boolean isDCyclicDFSHelper(String vertex, HashSet<String> visited, HashSet<String> path){
         if(path.contains(vertex))return true; //if its on path, we can do the path again, cycle
-        if(visited.contains(vertex)) return false; //already went from this node, no cycle
+        if(visited.contains(vertex)) return false; //all nodes explored, no cycle
         path.add(vertex);
         visited.add(vertex);
 
-        for(int j = 0;j<size;j++){
-            String nextNode = vertices.get(j);
-            if(getEdge(vertex, nextNode)>0){
-                if(isDCyclicDFSHelper(nextNode, visited, path)) return true;
+        for(Edge e : edges.get(vertex)){
+            if(e.weight>0){
+                if(isDCyclicDFSHelper(e.dest, visited, path)) return true;;
             }
         }
         path.remove(vertex);
@@ -172,43 +170,114 @@ public class AdjacencyMatrixGraph {
 
     public boolean isUDCyclicUnion(){
 
-        List<String> parents = new ArrayList<>();
-        for(int i=0;i<size;i++){
-            parents.add(vertices.get(i));
-        }
+        List<String> vertices = new ArrayList<>(edges.keySet());
+        List<String> parents = new ArrayList<>(vertices);
 
-        for(int i=0;i<size;i++){
-            String currVertex = vertices.get(i);
-            for(int j=i+1;j<size;j++){
-                String nextVertex = vertices.get(j);
-                int rootI = findRoot(i, parents);
-                int rootJ = findRoot(j, parents);
-                if(getEdge(currVertex, nextVertex)>0){
+        for(String vertex : edges.keySet()){
+            for(Edge e : edges.get(vertex)){
+                if(e.dest.compareTo(vertex)<0) continue; //do not process already processed nodes
+                int rootI = findRoot(vertices.indexOf(vertex),vertices, parents);
+                int rootJ = findRoot(vertices.indexOf(e.dest), vertices, parents);
+                if(e.weight>0){
                     if(rootI == rootJ) return true;
                     else parents.set(rootJ, parents.get(rootI));
                 }
+
             }
         }
-
         return false;
     }
 
-    private int findRoot(int index, List<String> parents){
+    private int findRoot(int index, List<String> vertices, List<String> parents){
         while(!parents.get(index).equals(vertices.get(index))){
             index = vertices.indexOf(parents.get(index));
         }
         return index;
     }
 
+    public List<String> findAllGraphsToStringBFS(){
+        List<String> result =  new ArrayList<>();
+        HashSet<String> visited = new HashSet<>();
+        for(String vertex : edges.keySet()){
+            String graph = "";
+            Queue<String> queue = new LinkedList<>();
+            queue.offer(vertex);
+            while(!queue.isEmpty()){
+
+                String curr = queue.poll();
+                if(visited.contains(curr)) continue;
+                graph += curr;
+                visited.add(curr);
+                for(Edge e : edges.get(curr)){
+                    if(e.weight>0 && !visited.contains(e.dest)){
+                        queue.offer(e.dest);
+                    }
+                }
+            }
+            if(!graph.isEmpty()) result.add(graph);
+        }
+        return result;
+    }
+
+    public List<String> findAllGraphsToStringDFS(){
+        HashSet<String> visited = new HashSet<>();
+        List<String> result = new ArrayList<>();
+
+        for(String vertex : edges.keySet()){
+            if(visited.contains(vertex)) continue;
+            visited.add(vertex);
+            String graph = "";
+            graph += findAllGraphsToStringDFSHelper(vertex,visited);
+            if(!graph.isEmpty()) result.add(graph);
+        }
+        return result;
+    }
+
+    private String findAllGraphsToStringDFSHelper(String vertex, HashSet<String> visited){
+        String result = "";
+        for(Edge e : edges.get(vertex)){
+            if(visited.contains(e.dest)) continue;
+            visited.add(e.dest);
+            if(e.weight>0){
+                result += findAllGraphsToStringDFSHelper(e.dest, visited);
+            }
+        }
+        return vertex + result;
+    }
+
+    public List<String> shortestPath(String src, String dest){
+        return null;
+    }
+
     public static void main(String[] args){
+        testSubGraphs();
         testTraversal();
         testCycleDFS();
         testCycleUnion();
+        testShortestPath();
+    }
+
+    private static void testSubGraphs(){
+        System.out.println("-----Find SubGraphs-----");
+        AdjacencyListGraph subGraphs = new AdjacencyListGraph();
+        subGraphs.addVertex("A");
+        subGraphs.addVertex("B");
+        subGraphs.addVertex("C");
+        List<String> graphs = subGraphs.findAllGraphsToStringDFS();
+        System.out.println("Size is 3? : (true) " + (graphs.size()==3));
+        System.out.println("3 subgraphs: (A; B; C) " + graphs.get(0) + "; " 
+            + graphs.get(1) + "; " 
+            + graphs.get(2));
+        subGraphs.addEdge("A", "B", 1);
+        graphs = subGraphs.findAllGraphsToStringDFS();
+        System.out.println("Size is 2? : (true) " + (graphs.size()==2));
+        System.out.println("2 subgraphs: (AB; C) " + graphs.get(0) + "; " 
+            + graphs.get(1));
     }
 
     private static void testTraversal(){
         System.out.println("-----Traversal-----");
-        AdjacencyMatrixGraph undirectedGraph = new AdjacencyMatrixGraph();
+        AdjacencyListGraph undirectedGraph = new AdjacencyListGraph();
         undirectedGraph.addVertex("A"); undirectedGraph.addVertex("B");
         undirectedGraph.addVertex("C"); undirectedGraph.addVertex("D");
         undirectedGraph.addVertex("E"); undirectedGraph.addVertex("F");
@@ -224,7 +293,7 @@ public class AdjacencyMatrixGraph {
         System.out.println("Undirected DFS from D: " + undirectedGraph.printGraphDFS("D"));
         System.out.println("Undirected BFS from D: " + undirectedGraph.printGraphBFS("D"));
 
-        AdjacencyMatrixGraph directedGraph = new AdjacencyMatrixGraph();
+        AdjacencyListGraph directedGraph = new AdjacencyListGraph();
         directedGraph.addVertex("A"); directedGraph.addVertex("B");
         directedGraph.addVertex("C"); directedGraph.addVertex("D");
         directedGraph.addVertex("E"); directedGraph.addVertex("F");
@@ -240,9 +309,10 @@ public class AdjacencyMatrixGraph {
 
     private static void testCycleDFS(){
         System.out.println("-----Is Cyclic DFS-----");
-        AdjacencyMatrixGraph udCyclicGraph = new AdjacencyMatrixGraph();
+        AdjacencyListGraph udCyclicGraph = new AdjacencyListGraph();
         udCyclicGraph.addVertex("A"); udCyclicGraph.addVertex("B");
-        udCyclicGraph.addVertex("C"); udCyclicGraph.addVertex("D"); udCyclicGraph.addVertex("E");
+        udCyclicGraph.addVertex("C"); udCyclicGraph.addVertex("D");
+        udCyclicGraph.addVertex("E");
         udCyclicGraph.addEdge("A", "B", 1); udCyclicGraph.addEdge("B", "A", 1);
         udCyclicGraph.addEdge("B", "C", 1); udCyclicGraph.addEdge("C", "B", 1);
         udCyclicGraph.addEdge("B", "D", 1); udCyclicGraph.addEdge("D", "B", 1);
@@ -250,7 +320,7 @@ public class AdjacencyMatrixGraph {
         udCyclicGraph.addEdge("D", "E", 1); udCyclicGraph.addEdge("E", "D", 1);
         System.out.println("Undirected IsCyclicDFS? (true) : " + udCyclicGraph.isUDCyclicDFS());
 
-        AdjacencyMatrixGraph dCyclicGraph = new AdjacencyMatrixGraph();
+        AdjacencyListGraph dCyclicGraph = new AdjacencyListGraph();
         dCyclicGraph.addVertex("A"); dCyclicGraph.addVertex("B");
         dCyclicGraph.addVertex("C"); dCyclicGraph.addVertex("D"); dCyclicGraph.addVertex("E");
         dCyclicGraph.addEdge("A", "B", 1); dCyclicGraph.addEdge("A", "D", 1);
@@ -258,27 +328,27 @@ public class AdjacencyMatrixGraph {
         dCyclicGraph.addEdge("C", "D", 1); dCyclicGraph.addEdge("E", "C", 1);
         System.out.println("Directed IsCyclicDFS? (true) : " + dCyclicGraph.isDCyclicDFS());
 
-        AdjacencyMatrixGraph dLongCycle = new AdjacencyMatrixGraph();
+        AdjacencyListGraph dLongCycle = new AdjacencyListGraph();
         dLongCycle.addVertex("A"); dLongCycle.addVertex("B");
         dLongCycle.addVertex("C"); dLongCycle.addVertex("D");
         dLongCycle.addEdge("A", "B", 1); dLongCycle.addEdge("B", "C", 1);
         dLongCycle.addEdge("C", "D", 1); dLongCycle.addEdge("D", "A", 1);
         System.out.println("Directed long cycle A->B->C->D->A (true) : " + dLongCycle.isDCyclicDFS());
 
-        AdjacencyMatrixGraph dag = new AdjacencyMatrixGraph();
+        AdjacencyListGraph dag = new AdjacencyListGraph();
         dag.addVertex("A"); dag.addVertex("B"); dag.addVertex("C"); dag.addVertex("D");
         dag.addEdge("A", "B", 1); dag.addEdge("A", "C", 1);
         dag.addEdge("B", "D", 1); dag.addEdge("C", "D", 1);
         System.out.println("Directed DAG diamond (false): " + dag.isDCyclicDFS());
 
-        AdjacencyMatrixGraph dagShared = new AdjacencyMatrixGraph();
+        AdjacencyListGraph dagShared = new AdjacencyListGraph();
         dagShared.addVertex("Z"); dagShared.addVertex("A"); dagShared.addVertex("B");
         dagShared.addVertex("C"); dagShared.addVertex("D");
         dagShared.addEdge("Z", "A", 1); dagShared.addEdge("A", "B", 1);
         dagShared.addEdge("A", "C", 1); dagShared.addEdge("B", "D", 1); dagShared.addEdge("C", "D", 1);
         System.out.println("Directed DAG shared sink (false): " + dagShared.isCyclic(true));
 
-        AdjacencyMatrixGraph tree = new AdjacencyMatrixGraph();
+        AdjacencyListGraph tree = new AdjacencyListGraph();
         tree.addVertex("A"); tree.addVertex("B"); tree.addVertex("C"); tree.addVertex("D");
         tree.addEdge("A", "B", 1); tree.addEdge("B", "A", 1);
         tree.addEdge("B", "C", 1); tree.addEdge("C", "B", 1);
@@ -288,7 +358,7 @@ public class AdjacencyMatrixGraph {
 
     private static void testCycleUnion(){
         System.out.println("-----Is Cyclic Union-----");
-        AdjacencyMatrixGraph uCyclic = new AdjacencyMatrixGraph();
+        AdjacencyListGraph uCyclic = new AdjacencyListGraph();
         uCyclic.addVertex("A"); uCyclic.addVertex("B");
         uCyclic.addVertex("C"); uCyclic.addVertex("D");
         uCyclic.addEdge("A", "B", 1); uCyclic.addEdge("B", "A", 1);
@@ -297,7 +367,7 @@ public class AdjacencyMatrixGraph {
         uCyclic.addEdge("C", "D", 1); uCyclic.addEdge("D", "C", 1);
         System.out.println("Undirected with cycle     (true) : " + uCyclic.isUDCyclicUnion());
 
-        AdjacencyMatrixGraph uTree = new AdjacencyMatrixGraph();
+        AdjacencyListGraph uTree = new AdjacencyListGraph();
         uTree.addVertex("A"); uTree.addVertex("B");
         uTree.addVertex("C"); uTree.addVertex("D");
         uTree.addEdge("A", "B", 1); uTree.addEdge("B", "A", 1);
@@ -305,11 +375,11 @@ public class AdjacencyMatrixGraph {
         uTree.addEdge("C", "D", 1); uTree.addEdge("D", "C", 1);
         System.out.println("Undirected tree no cycle  (false): " + uTree.isUDCyclicUnion());
 
-        AdjacencyMatrixGraph single = new AdjacencyMatrixGraph();
+        AdjacencyListGraph single = new AdjacencyListGraph();
         single.addVertex("A");
         System.out.println("Single node               (false): " + single.isUDCyclicUnion());
 
-        AdjacencyMatrixGraph dagSharedUnion = new AdjacencyMatrixGraph();
+        AdjacencyListGraph dagSharedUnion = new AdjacencyListGraph();
         dagSharedUnion.addVertex("Z"); dagSharedUnion.addVertex("A");
         dagSharedUnion.addVertex("B"); dagSharedUnion.addVertex("C"); dagSharedUnion.addVertex("D");
         dagSharedUnion.addEdge("Z", "A", 1); dagSharedUnion.addEdge("A", "Z", 1);
@@ -319,7 +389,7 @@ public class AdjacencyMatrixGraph {
         dagSharedUnion.addEdge("C", "D", 1); dagSharedUnion.addEdge("D", "C", 1);
         System.out.println("Undirected shared sink    (true) : " + dagSharedUnion.isUDCyclicUnion());
 
-        AdjacencyMatrixGraph flatUnionBug = new AdjacencyMatrixGraph();
+        AdjacencyListGraph flatUnionBug = new AdjacencyListGraph();
         flatUnionBug.addVertex("A"); flatUnionBug.addVertex("B"); flatUnionBug.addVertex("C");
         flatUnionBug.addVertex("D"); flatUnionBug.addVertex("E");
         flatUnionBug.addEdge("A", "C", 1); flatUnionBug.addEdge("C", "A", 1);
@@ -328,5 +398,36 @@ public class AdjacencyMatrixGraph {
         flatUnionBug.addEdge("D", "E", 1); flatUnionBug.addEdge("E", "D", 1);
         flatUnionBug.addEdge("A", "E", 1); flatUnionBug.addEdge("E", "A", 1);
         System.out.println("Flat union bug A-C-B-D-E-A cycle (true) : " + flatUnionBug.isUDCyclicUnion());
+    }
+
+    private static void testShortestPath(){
+        System.out.println("-----Shortest Path (BFS)-----");
+        // Linear path: A-B-C-D-E
+        AdjacencyListGraph g = new AdjacencyListGraph();
+        g.addVertex("A"); g.addVertex("B"); g.addVertex("C");
+        g.addVertex("D"); g.addVertex("E");
+        g.addEdge("A", "B", 1); g.addEdge("B", "A", 1);
+        g.addEdge("B", "C", 1); g.addEdge("C", "B", 1);
+        g.addEdge("C", "D", 1); g.addEdge("D", "C", 1);
+        g.addEdge("D", "E", 1); g.addEdge("E", "D", 1);
+        System.out.println("A to E (A-B-C-D-E): " + g.shortestPath("A", "E"));
+
+        // Shortcut exists: A-B-C and A-C directly
+        AdjacencyListGraph g2 = new AdjacencyListGraph();
+        g2.addVertex("A"); g2.addVertex("B"); g2.addVertex("C"); g2.addVertex("D");
+        g2.addEdge("A", "B", 1); g2.addEdge("B", "A", 1);
+        g2.addEdge("B", "C", 1); g2.addEdge("C", "B", 1);
+        g2.addEdge("A", "C", 1); g2.addEdge("C", "A", 1); // shortcut A→C
+        g2.addEdge("C", "D", 1); g2.addEdge("D", "C", 1);
+        System.out.println("A to D, shortcut A-C (A-C-D): " + g2.shortestPath("A", "D"));
+
+        // No path (disconnected)
+        AdjacencyListGraph g3 = new AdjacencyListGraph();
+        g3.addVertex("A"); g3.addVertex("B"); g3.addVertex("C");
+        g3.addEdge("A", "B", 1); g3.addEdge("B", "A", 1);
+        System.out.println("A to C, disconnected ([]): " + g3.shortestPath("A", "C"));
+
+        // Same node
+        System.out.println("A to A ([A]): " + g.shortestPath("A", "A"));
     }
 }
