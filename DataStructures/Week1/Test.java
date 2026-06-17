@@ -1,13 +1,9 @@
 package DataStructures.Week1;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
-import DataStructures.Week1.SingleLinkedList.Node;
 
 public class Test {
     public static void main(String args[]){
