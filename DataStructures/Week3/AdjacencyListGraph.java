@@ -2,11 +2,13 @@ package DataStructures.Week3;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 import java.util.Queue;
 
 public class AdjacencyListGraph {
@@ -74,16 +76,13 @@ public class AdjacencyListGraph {
 
             vertex = queue.poll();
             result += vertex;
-            
             List<Edge> vertexEdges = this.edges.get(vertex);
             for(Edge e : vertexEdges){
-                int weight = e.weight;
-                if(weight > 0 && !visited.contains(e.dest)){
+                if(e.weight > 0 && !visited.contains(e.dest)){
                     queue.offer(e.dest);
                     visited.add(e.dest);
                 }
             }
-
         }
         return result;
     }
@@ -246,14 +245,38 @@ public class AdjacencyListGraph {
     }
 
     public List<String> shortestPath(String src, String dest){
-        return null;
+        if(!edges.containsKey(src) || !edges.containsKey(dest)) return new ArrayList<>();
+        Map<String, String> parents = new HashMap<>();
+        Queue<String> queue = new LinkedList<>(); // using BFS to find shortest path
+        queue.offer(src);
+        parents.put(src, null);
+
+        while(!queue.isEmpty()){
+            String curr = queue.poll();
+            if(curr.equals(dest)) break;
+            for(Edge e : edges.get(curr)){
+                if(e.weight>0 && !parents.containsKey(e.dest)){
+                    queue.offer(e.dest);
+                    parents.put(e.dest, curr);
+                }
+            }
+        }
+        List<String> path = new ArrayList<>();
+        if(!parents.containsKey(dest)) return path;
+
+        String next = dest;
+        while(next != null){
+            path.add(next);
+            next = parents.get(next);
+        }
+        return path.reversed();
     }
 
     public static void main(String[] args){
-        testSubGraphs();
-        testTraversal();
-        testCycleDFS();
-        testCycleUnion();
+        // testSubGraphs();
+        // testTraversal();
+        // testCycleDFS();
+        // testCycleUnion();
         testShortestPath();
     }
 
@@ -429,5 +452,20 @@ public class AdjacencyListGraph {
 
         // Same node
         System.out.println("A to A ([A]): " + g.shortestPath("A", "A"));
+
+        // Dest has onward neighbors: A-E direct, E-B; A to E should be [A,E] not via B
+        AdjacencyListGraph g4 = new AdjacencyListGraph();
+        g4.addVertex("A"); g4.addVertex("E"); g4.addVertex("B");
+        g4.addEdge("A", "E", 1); g4.addEdge("E", "A", 1);
+        g4.addEdge("E", "B", 1); g4.addEdge("B", "E", 1);
+        System.out.println("A to E, E has neighbor B ([A,E]): " + g4.shortestPath("A", "E"));
+
+        // Graph with a cycle: A-B-C-A, ask A to C; BFS should not loop
+        AdjacencyListGraph g5 = new AdjacencyListGraph();
+        g5.addVertex("A"); g5.addVertex("B"); g5.addVertex("C");
+        g5.addEdge("A", "B", 1); g5.addEdge("B", "A", 1);
+        g5.addEdge("B", "C", 1); g5.addEdge("C", "B", 1);
+        g5.addEdge("C", "A", 1); g5.addEdge("A", "C", 1); // cycle
+        System.out.println("A to C, cycle A-B-C-A ([A,C]): " + g5.shortestPath("A", "C"));
     }
 }
