@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Collections;
 import java.util.Queue;
 
@@ -272,12 +273,57 @@ public class AdjacencyListGraph {
         return path.reversed();
     }
 
+
+    public List<String> dijkstra(String src, String dest){
+        //need: 
+        // parents (where did I come from): HashMap<String,String>
+        // edges: Map<List<Edge>>
+        // distances (total cost of shortest path to get to me): HashMap<String, int>
+        // priority queue with minheap to get lowest cost easily from queue and O(1)
+        HashMap<String,String> parents = new HashMap<>();
+        HashMap<String,Integer> nodeValues = new HashMap<>();
+        HashSet<String> visited = new HashSet<>();
+        PriorityQueue<Edge> pQueue = new PriorityQueue<>((e1,e2)->e1.weight-e2.weight);
+        nodeValues.put(src, 0);
+        pQueue.offer(new Edge(0,src));
+        parents.put(src, null);
+
+        //pQ has pairs: weight is value of vertex, and vertex
+        while(!pQueue.isEmpty()){
+            Edge curr = pQueue.poll();
+            if(visited.contains(curr.dest)) continue; //we already processed this node
+            visited.add(curr.dest);
+            if(curr.dest.equals(dest)) break;
+
+            for(Edge e : edges.get(curr.dest)){
+                if(e.weight >= 0){ //dijkstra only processes non negative values
+                    Integer newCost = e.weight + nodeValues.get(curr.dest);
+                    Integer destValue = nodeValues.get(e.dest);
+                    if(destValue == null || newCost < destValue){
+                        parents.put(e.dest, curr.dest);
+                        nodeValues.put(e.dest, newCost);
+                        pQueue.offer(new Edge(newCost,e.dest));
+                    }
+                }
+            }
+        }
+        List<String> path = new ArrayList<>();
+        if(!parents.containsKey(dest)) return path;
+
+        String next = dest;
+        while(next != null){
+            path.add(next);
+            next = parents.get(next);
+        }
+        return path.reversed();
+    }
+
     public static void main(String[] args){
         // testSubGraphs();
         // testTraversal();
         // testCycleDFS();
         // testCycleUnion();
-        testShortestPath();
+        testDijkstra();
     }
 
     private static void testSubGraphs(){
@@ -467,5 +513,67 @@ public class AdjacencyListGraph {
         g5.addEdge("B", "C", 1); g5.addEdge("C", "B", 1);
         g5.addEdge("C", "A", 1); g5.addEdge("A", "C", 1); // cycle
         System.out.println("A to C, cycle A-B-C-A ([A,C]): " + g5.shortestPath("A", "C"));
+    }
+
+    private static void testDijkstra(){
+        System.out.println("-----Dijkstra (Weighted Shortest Path)-----");
+
+        // Weights decide path: A-B direct (w=10), A-C (w=1), C-B (w=1)
+        // BFS would return [A,B] (fewest hops), Dijkstra should return [A,C,B] (lowest cost=2)
+        AdjacencyListGraph g = new AdjacencyListGraph();
+        g.addVertex("A"); g.addVertex("B"); g.addVertex("C");
+        g.addEdge("A", "B", 10); g.addEdge("B", "A", 10);
+        g.addEdge("A", "C", 1);  g.addEdge("C", "A", 1);
+        g.addEdge("C", "B", 1);  g.addEdge("B", "C", 1);
+        System.out.println("A to B, cheaper via C ([A,C,B]): " + g.dijkstra("A", "B"));
+
+        // Two paths, pick cheaper: A-B (w=1), B-D (w=1) vs A-C (w=1), C-D (w=5)
+        // Dijkstra should pick A-B-D (cost=2) over A-C-D (cost=6)
+        AdjacencyListGraph g2 = new AdjacencyListGraph();
+        g2.addVertex("A"); g2.addVertex("B"); g2.addVertex("C"); g2.addVertex("D");
+        g2.addEdge("A", "B", 1); g2.addEdge("B", "A", 1);
+        g2.addEdge("B", "D", 1); g2.addEdge("D", "B", 1);
+        g2.addEdge("A", "C", 1); g2.addEdge("C", "A", 1);
+        g2.addEdge("C", "D", 5); g2.addEdge("D", "C", 5);
+        System.out.println("A to D, cheaper via B ([A,B,D]): " + g2.dijkstra("A", "D"));
+
+        // Disconnected
+        AdjacencyListGraph g3 = new AdjacencyListGraph();
+        g3.addVertex("A"); g3.addVertex("B"); g3.addVertex("C");
+        g3.addEdge("A", "B", 1); g3.addEdge("B", "A", 1);
+        System.out.println("A to C, disconnected ([]): " + g3.dijkstra("A", "C"));
+
+        // Same node
+        System.out.println("A to A ([A]): " + g.dijkstra("A", "A"));
+
+        // Cheap first hop but expensive total: A-B (w=1), B-D (w=100), A-C (w=2), C-D (w=2)
+        // Greedy first hop picks B (cheapest), but total via C is 4 vs 101
+        // Dijkstra must pick [A,C,D]
+        AdjacencyListGraph g4 = new AdjacencyListGraph();
+        g4.addVertex("A"); g4.addVertex("B"); g4.addVertex("C"); g4.addVertex("D");
+        g4.addEdge("A", "B", 1);   g4.addEdge("B", "A", 1);
+        g4.addEdge("B", "D", 100); g4.addEdge("D", "B", 100);
+        g4.addEdge("A", "C", 2);   g4.addEdge("C", "A", 2);
+        g4.addEdge("C", "D", 2);   g4.addEdge("D", "C", 2);
+        System.out.println("A to D, cheap first hop B but expensive total ([A,C,D]): " + g4.dijkstra("A", "D"));
+
+        // Expensive direct shortcut vs cheap long path: A-E (w=100), A-B-C-D-E (w=1 each)
+        // Dijkstra must pick [A,B,C,D,E] (cost=4) over [A,E] (cost=100)
+        AdjacencyListGraph g5 = new AdjacencyListGraph();
+        g5.addVertex("A"); g5.addVertex("B"); g5.addVertex("C"); g5.addVertex("D"); g5.addVertex("E");
+        g5.addEdge("A", "E", 100); g5.addEdge("E", "A", 100);
+        g5.addEdge("A", "B", 1);   g5.addEdge("B", "A", 1);
+        g5.addEdge("B", "C", 1);   g5.addEdge("C", "B", 1);
+        g5.addEdge("C", "D", 1);   g5.addEdge("D", "C", 1);
+        g5.addEdge("D", "E", 1);   g5.addEdge("E", "D", 1);
+        System.out.println("A to E, expensive direct vs cheap chain ([A,B,C,D,E]): " + g5.dijkstra("A", "E"));
+
+        // Graph with a cycle: must not loop, must find [A,B,C]
+        AdjacencyListGraph g6 = new AdjacencyListGraph();
+        g6.addVertex("A"); g6.addVertex("B"); g6.addVertex("C");
+        g6.addEdge("A", "B", 1); g6.addEdge("B", "A", 1);
+        g6.addEdge("B", "C", 1); g6.addEdge("C", "B", 1);
+        g6.addEdge("C", "A", 1); g6.addEdge("A", "C", 1);
+        System.out.println("A to C with cycle, no loop ([A,C]): " + g6.dijkstra("A", "C"));
     }
 }
