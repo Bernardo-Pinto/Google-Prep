@@ -1,10 +1,16 @@
 package DataStructures.Week3;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.function.Function;
 
 public class AdjacencyMatrixGraph {
  
@@ -200,10 +206,201 @@ public class AdjacencyMatrixGraph {
         return index;
     }
 
+    // ---- TOPOLOGICAL SORT (Kahn's Algorithm — BFS-based) ----
+    // Only valid on Directed Acyclic Graphs (DAGs).
+    // Returns an empty list if the graph has a cycle.
+    //
+    // Idea: a node with no incoming edges has nothing it depends on,
+    // so it can always come first. We repeatedly pick such nodes.
+    //
+    // Steps:
+    //   1. Count in-degrees (how many edges point INTO each node)
+    //   2. Enqueue all nodes with in-degree 0 (no dependencies)
+    //   3. Each time we process a node, we "remove" it from the graph:
+    //      reduce the in-degree of all its neighbors
+    //   4. Any neighbor whose in-degree drops to 0 is now free — enqueue it
+    //   5. If we processed every node, it's a valid DAG → return order
+    //      If not, a cycle exists → return []
+    public List<String> topologicalSortKahn(){
+        // Step 1: compute in-degree for every vertex
+        // In-degree of vertex j = number of edges pointing to j
+        // In the matrix, column j holds all incoming edges for vertex j
+        int[] inDegree = new int[size];
+        for(int i = 0; i < size; i++){
+            for(int j = 0; j < size; j++){
+                if(matrix.get(i).get(j) > 0) inDegree[j]++;
+            }
+        }
+
+        // Step 2: seed the queue with every node that has no incoming edges
+        Queue<String> queue = new LinkedList<>();
+        for(int i = 0; i < size; i++){
+            if(inDegree[i] == 0) queue.offer(vertices.get(i));
+        }
+
+        List<String> result = new ArrayList<>();
+
+        while(!queue.isEmpty()){
+            String curr = queue.poll();
+            result.add(curr);           // this node is "done" — add to order
+            int currIndex = vertices.indexOf(curr);
+
+            // Step 3+4: for every neighbor of curr, remove the edge by
+            // decrementing its in-degree; if it reaches 0, enqueue it
+            for(int j = 0; j < size; j++){
+                if(matrix.get(currIndex).get(j) > 0){
+                    inDegree[j]--;
+                    if(inDegree[j] == 0) queue.offer(vertices.get(j));
+                }
+            }
+        }
+
+        // Step 5: if we didn't process every node, a cycle exists
+        if(result.size() != size) return new ArrayList<>();
+        return result;
+    }
+
+    // ---- TOPOLOGICAL SORT (DFS-based) ----
+    // Same requirement: DAG only.
+    //
+    // Idea: in DFS, a node is "finished" only after all nodes reachable
+    // from it are finished. So the finishing order is the reverse of
+    // topological order — push to a stack as you finish, then pop the stack.
+    //
+    // Steps:
+    //   1. DFS from every unvisited node
+    //   2. After recursing into all neighbors of a node, push it onto a stack
+    //      (this is called "post-order")
+    //   3. Pop the stack → topological order
+    //
+    // Cycle detection: track nodes currently on the DFS path ("path" set).
+    // If we revisit a node on the current path, there's a back edge → cycle.
+    public List<String> topologicalSortDFS(){
+        HashSet<String> visited = new HashSet<>();
+        HashSet<String> path    = new HashSet<>();  // current DFS path (for cycle detection)
+        Deque<String>   stack   = new ArrayDeque<>();
+
+        for(String vertex : vertices){
+            if(visited.contains(vertex)) continue;
+            // returns false if a cycle is detected
+            if(!topologicalSortDFSHelper(vertex, visited, path, stack))
+                return new ArrayList<>();  // cycle found — no valid order
+        }
+
+        // Pop the stack into a list — this is the topological order
+        List<String> result = new ArrayList<>();
+        while(!stack.isEmpty()) result.add(stack.pop());
+        return result;
+    }
+
+    // Returns false if a cycle is detected, true otherwise.
+    private boolean topologicalSortDFSHelper(String vertex,
+                                              HashSet<String> visited,
+                                              HashSet<String> path,
+                                              Deque<String> stack){
+        path.add(vertex);     // mark as on the current DFS path
+        visited.add(vertex);  // mark as visited so we don't restart DFS from here
+
+        for(int j = 0; j < size; j++){
+            String neighbor = vertices.get(j);
+            if(matrix.get(vertices.indexOf(vertex)).get(j) > 0){
+                if(path.contains(neighbor)) return false;     // back edge → cycle
+                if(!visited.contains(neighbor)){
+                    if(!topologicalSortDFSHelper(neighbor, visited, path, stack))
+                        return false;
+                }
+            }
+        }
+
+        path.remove(vertex);  // leaving this node — remove from current path
+        stack.push(vertex);   // post-order: all neighbors done, now push self
+        return true;
+    }
+
+    // ---- A* SEARCH ----
+    // A* finds the shortest weighted path from src to dest, just like Dijkstra.
+    // The difference: A* uses a *heuristic* to prioritise nodes that appear
+    // to be closer to the destination, so it explores fewer nodes.
+    //
+    // Every node n has two values:
+    //   g(n) = actual cost paid so far to reach n from src  (same as Dijkstra's distances map)
+    //   h(n) = heuristic estimate of remaining cost from n to dest  (caller provides this)
+    //   f(n) = g(n) + h(n)  ← the PQ sorts by this
+    //
+    // The heuristic MUST be admissible (never overestimate) to guarantee the
+    // optimal path. Passing h = v -> 0 makes A* behave exactly like Dijkstra.
+    //
+    // Parameters:
+    //   heuristic — a function from vertex name to estimated remaining cost
+    //               e.g.  v -> 0          (admissible, = Dijkstra)
+    //                     v -> myMap.get(v)  (domain-specific estimate)
+    public List<String> aStar(String src, String dest, Function<String, Integer> heuristic){
+        if(!vertices.contains(src) || !vertices.contains(dest)) return new ArrayList<>();
+
+        // g(n): cheapest known actual cost to reach each node from src
+        Map<String, Integer> g = new HashMap<>();
+
+        // parents: which node did we arrive from on the best known path
+        Map<String, String> parents = new HashMap<>();
+
+        // visited: nodes that have been finalised (polled and processed)
+        HashSet<String> visited = new HashSet<>();
+
+        // PQ stores pairs of (f-cost, vertex), ordered by f-cost ascending.
+        // f is baked in at insertion time — same pattern as Dijkstra's (cost, vertex) edges.
+        // Stale entries (more expensive entries) are skipped via visited.
+        PriorityQueue<Map.Entry<Integer, String>> pq = new PriorityQueue<>(
+            (a, b) -> a.getKey() - b.getKey()
+        );
+
+        // Initialise: src has g=0, f=0+h(src)
+        g.put(src, 0);
+        parents.put(src, null);
+        pq.offer(Map.entry(heuristic.apply(src), src));
+
+        while(!pq.isEmpty()){
+            Map.Entry<Integer, String> polled = pq.poll();
+            String curr = polled.getValue();
+
+            // Skip stale entries — a cheaper path to curr was already finalised
+            if(visited.contains(curr)) continue;
+            visited.add(curr);
+
+            if(curr.equals(dest)) break;
+
+            int currIndex = vertices.indexOf(curr);
+
+            for(int j = 0; j < size; j++){
+                int edgeWeight = matrix.get(currIndex).get(j);
+                if(edgeWeight <= 0) continue;
+                String neighbour = vertices.get(j);
+                if(visited.contains(neighbour)) continue;
+
+                int newG = g.get(curr) + edgeWeight;
+
+                if(newG < g.getOrDefault(neighbour, Integer.MAX_VALUE)){
+                    g.put(neighbour, newG);
+                    parents.put(neighbour, curr);
+                    // f = g(neighbour) + h(neighbour), baked in at insertion
+                    pq.offer(Map.entry(newG + heuristic.apply(neighbour), neighbour));
+                }
+            }
+        }
+
+        if(!parents.containsKey(dest)) return new ArrayList<>();
+        List<String> path = new ArrayList<>();
+        String node = dest;
+        while(node != null){ path.add(node); node = parents.get(node); }
+        java.util.Collections.reverse(path);
+        return path;
+    }
+
     public static void main(String[] args){
-        testTraversal();
-        testCycleDFS();
-        testCycleUnion();
+        //testTraversal();
+        //testCycleDFS();
+        //testCycleUnion();
+        testTopologicalSort();
+        //testAStar();
     }
 
     private static void testTraversal(){
@@ -328,5 +525,83 @@ public class AdjacencyMatrixGraph {
         flatUnionBug.addEdge("D", "E", 1); flatUnionBug.addEdge("E", "D", 1);
         flatUnionBug.addEdge("A", "E", 1); flatUnionBug.addEdge("E", "A", 1);
         System.out.println("Flat union bug A-C-B-D-E-A cycle (true) : " + flatUnionBug.isUDCyclicUnion());
+    }
+
+    private static void testTopologicalSort(){
+        System.out.println("-----Topological Sort-----");
+
+        // Classic DAG: course prerequisites
+        // A→C, B→C, B→D, C→E, D→F, E→F
+        // Valid orders: [A,B,C,D,E,F] or [B,A,C,D,E,F] etc.
+        AdjacencyMatrixGraph dag = new AdjacencyMatrixGraph();
+        dag.addVertex("A"); dag.addVertex("B"); dag.addVertex("C");
+        dag.addVertex("D"); dag.addVertex("E"); dag.addVertex("F");
+        dag.addEdge("A", "C", 1);
+        dag.addEdge("B", "C", 1); dag.addEdge("B", "D", 1);
+        dag.addEdge("C", "E", 1);
+        dag.addEdge("D", "F", 1);
+        dag.addEdge("E", "F", 1);
+        System.out.println("DAG Kahn : " + dag.topologicalSortKahn());
+        System.out.println("DAG DFS  : " + dag.topologicalSortDFS());
+
+        // Graph WITH a cycle — both should return []
+        AdjacencyMatrixGraph cyclic = new AdjacencyMatrixGraph();
+        cyclic.addVertex("A"); cyclic.addVertex("B"); cyclic.addVertex("C");
+        cyclic.addEdge("A", "B", 1);
+        cyclic.addEdge("B", "C", 1);
+        cyclic.addEdge("C", "A", 1); // back edge creates cycle
+        System.out.println("Cyclic Kahn ([]): " + cyclic.topologicalSortKahn());
+        System.out.println("Cyclic DFS  ([]): " + cyclic.topologicalSortDFS());
+
+        // Single node — trivial valid order
+        AdjacencyMatrixGraph single = new AdjacencyMatrixGraph();
+        single.addVertex("A");
+        System.out.println("Single node Kahn ([A]): " + single.topologicalSortKahn());
+        System.out.println("Single node DFS  ([A]): " + single.topologicalSortDFS());
+    }
+
+    private static void testAStar(){
+        System.out.println("-----A* Search-----");
+
+        // Graph: A-B (w=10), A-C (w=1), C-B (w=1)
+        // Optimal path is [A,C,B] with cost=2. Direct A-B costs 10.
+        AdjacencyMatrixGraph g = new AdjacencyMatrixGraph();
+        g.addVertex("A"); g.addVertex("B"); g.addVertex("C");
+        g.addEdge("A", "B", 10); g.addEdge("B", "A", 10);
+        g.addEdge("A", "C", 1);  g.addEdge("C", "A", 1);
+        g.addEdge("C", "B", 1);  g.addEdge("B", "C", 1);
+
+        // --- CASE 1: h=0 (pure Dijkstra) ---
+        // No heuristic guidance. Explores all nodes by cost. Finds optimal path.
+        System.out.println("Dijkstra (h=0)                      ([A,C,B]): "
+            + g.aStar("A", "B", v -> 0));
+
+        // --- CASE 2: A* with admissible heuristic ---
+        // h(C)=1, h(A)=2, h(B)=0 — never overestimates real remaining cost.
+        // f(C) = g(C)+h(C) = 1+1 = 2   →  C is preferred first
+        // f(B) = g(B)+h(B) = 10+0 = 10 →  direct B is deprioritised
+        // Result: same optimal [A,C,B]. A* just gets there with less exploration.
+        System.out.println("A* admissible h (same result)       ([A,C,B]): "
+            + g.aStar("A", "B", v -> v.equals("C") ? 1 : v.equals("A") ? 2 : 0));
+
+        // --- CASE 3: A* with INADMISSIBLE heuristic (overestimates) ---
+        // h(C)=999 wildly overestimates cost from C to B.
+        // f(C) = g(C)+h(C) = 1+999 = 1000  →  C looks terrible, A* avoids it
+        // f(B) = g(B)+h(B) = 10+0   = 10   →  direct B looks cheap by comparison
+        // A* finalises B immediately via the direct edge → returns WRONG path [A,B]
+        // This is why admissibility matters: break it, lose the optimality guarantee.
+        System.out.println("A* INADMISSIBLE h (WRONG — not opt) ([A,B])  : "
+            + g.aStar("A", "B", v -> v.equals("C") ? 999 : 0));
+
+        // --- CASE 4: disconnected ---
+        AdjacencyMatrixGraph g2 = new AdjacencyMatrixGraph();
+        g2.addVertex("A"); g2.addVertex("B"); g2.addVertex("C");
+        g2.addEdge("A", "B", 1); g2.addEdge("B", "A", 1);
+        System.out.println("Disconnected                        ([]): "
+            + g2.aStar("A", "C", v -> 0));
+
+        // --- CASE 5: same node ---
+        System.out.println("Same node                           ([A]): "
+            + g.aStar("A", "A", v -> 0));
     }
 }

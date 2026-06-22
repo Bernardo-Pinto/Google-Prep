@@ -139,15 +139,11 @@ public class AdjacencyListGraph {
     }
 
     private boolean isDCyclicDFS(){
-        for(Map.Entry<String,List<Edge>> entry : edges.entrySet()){
-            for(Edge e : entry.getValue()){
-                if(e.weight>0){
-                    HashSet<String> visited = new HashSet<>();
-                    HashSet<String> path = new HashSet<>();
-                    visited.add(entry.getKey());
-                    path.add(entry.getKey());
-                    if(isDCyclicDFSHelper(e.dest, visited, path)) return true;
-                }
+        HashSet<String> visited = new HashSet<>();
+        HashSet<String> path = new HashSet<>();
+        for(String vertex : edges.keySet()){
+            if(!visited.contains(vertex)){
+                if(isDCyclicDFSHelper(vertex, visited, path)) return true;
             }
         }
         return false;
@@ -318,12 +314,71 @@ public class AdjacencyListGraph {
         return path.reversed();
     }
 
+    //BFS
+    public List<String> topologicalSortKahn(){
+        List<String> result =  new ArrayList<>();
+        HashMap<String, Integer> inDegree = new HashMap<>();
+        for(String node : edges.keySet()){
+            inDegree.put(node, 0);
+        }
+        for(String node : edges.keySet()){
+            for(Edge e : edges.get(node)){
+                inDegree.merge(e.dest, 1, (a,b) -> a+b);
+            }
+        }
+        Queue<String> queue =  new LinkedList<>();
+        inDegree.forEach((k,v) -> {
+            if(v == 0) queue.offer(k);
+        });
+
+        while (!queue.isEmpty()) {
+            String node = queue.poll();
+            result.add(node);
+            for(Edge e : edges.get(node)){
+                inDegree.merge(e.dest, -1, (a,b) -> a+b);
+                if(inDegree.get(e.dest) == 0) queue.offer(e.dest);
+            }
+        }
+        if(result.size() != edges.size()) return new ArrayList<>();
+        return result;
+    }
+
+    public List<String> topologicalSortDFS(){
+        List<String> result = new ArrayList<>();
+        HashSet<String> path = new HashSet<>();
+        HashSet<String> visited = new HashSet<>();
+        for(String vertex : edges.keySet()){
+            if(!visited.contains(vertex)){
+                if(!topologicalSortDFSHelper(vertex, result, visited, path)){
+                    return new ArrayList<>();
+                }
+            }
+        }
+        return result.reversed();
+    }
+
+    private boolean topologicalSortDFSHelper(String curr,List<String> result, HashSet<String> visited, HashSet<String> path){
+        path.add(curr);
+        visited.add(curr);
+
+        for(Edge e : edges.get(curr)){
+            if(path.contains(e.dest)) return false;
+            if(!visited.contains(e.dest)) 
+                if(!topologicalSortDFSHelper(e.dest, result, visited, path))
+                    return false;
+        }
+        path.remove(curr);
+        result.add(curr);
+        return true;
+    }
+
     public static void main(String[] args){
         // testSubGraphs();
         // testTraversal();
         // testCycleDFS();
         // testCycleUnion();
-        testDijkstra();
+        //testDijkstra();
+        testTopologicalSort();
     }
 
     private static void testSubGraphs(){
@@ -575,5 +630,38 @@ public class AdjacencyListGraph {
         g6.addEdge("B", "C", 1); g6.addEdge("C", "B", 1);
         g6.addEdge("C", "A", 1); g6.addEdge("A", "C", 1);
         System.out.println("A to C with cycle, no loop ([A,C]): " + g6.dijkstra("A", "C"));
+    }
+
+    private static void testTopologicalSort(){
+        System.out.println("-----Topological Sort-----");
+
+        // Classic DAG: course prerequisites
+        // A→C, B→C, B→D, C→E, D→F, E→F
+        // Valid orders: [A,B,C,D,E,F] or [B,A,C,D,E,F] etc.
+        AdjacencyListGraph dag = new AdjacencyListGraph();
+        dag.addVertex("A"); dag.addVertex("B"); dag.addVertex("C");
+        dag.addVertex("D"); dag.addVertex("E"); dag.addVertex("F");
+        dag.addEdge("A", "C", 1);
+        dag.addEdge("B", "C", 1); dag.addEdge("B", "D", 1);
+        dag.addEdge("C", "E", 1);
+        dag.addEdge("D", "F", 1);
+        dag.addEdge("E", "F", 1);
+        System.out.println("DAG Kahn : " + dag.topologicalSortKahn());
+        System.out.println("DAG DFS  : " + dag.topologicalSortDFS());
+
+        // Graph WITH a cycle — both should return []
+        AdjacencyListGraph cyclic = new AdjacencyListGraph();
+        cyclic.addVertex("A"); cyclic.addVertex("B"); cyclic.addVertex("C");
+        cyclic.addEdge("A", "B", 1);
+        cyclic.addEdge("B", "C", 1);
+        cyclic.addEdge("C", "A", 1); // back edge creates cycle
+        System.out.println("Cyclic Kahn ([]): " + cyclic.topologicalSortKahn());
+        System.out.println("Cyclic DFS  ([]): " + cyclic.topologicalSortDFS());
+
+        // Single node — trivial valid order
+        AdjacencyListGraph single = new AdjacencyListGraph();
+        single.addVertex("A");
+        System.out.println("Single node Kahn ([A]): " + single.topologicalSortKahn());
+        System.out.println("Single node DFS  ([A]): " + single.topologicalSortDFS());
     }
 }
