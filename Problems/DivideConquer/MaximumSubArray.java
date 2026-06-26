@@ -1,4 +1,4 @@
-package Problems;
+package Problems.DivideConquer;
 
 import java.util.List;
 
