@@ -301,9 +301,9 @@ public class SortingAlgorithms {
     //#endregion
 
     public static void main(String[] args) {
-        //quickSortTest();
-        //mergeSortTest();
-        //heapSortTest();
+        quickSortTest();
+        mergeSortTest();
+        heapSortTest();
         binarySearchTest();
     }
 

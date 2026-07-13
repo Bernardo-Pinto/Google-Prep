@@ -396,11 +396,11 @@ public class AdjacencyMatrixGraph {
     }
 
     public static void main(String[] args){
-        //testTraversal();
-        //testCycleDFS();
-        //testCycleUnion();
+        testTraversal();
+        testCycleDFS();
+        testCycleUnion();
         testTopologicalSort();
-        //testAStar();
+        testAStar();
     }
 
     private static void testTraversal(){

@@ -316,7 +316,7 @@ public class Test {
         System.out.println("After add(0, 88) (expect 88, 0, 1, 2, 99, 3, 4, 5): " + list.toString());
 
         System.out.println("-------Comparator test------");
-        Comparator<SingleLinkedList<Integer>.Node> nodeComparator = list.nodeComparator((e1,e2) -> e2.compareTo(e1));
+        Comparator<SingleLinkedList<Integer>.Node> nodeComparator = list.nodeComparator((e1,e2) -> e1.compareTo(e2));
         SingleLinkedList<Integer>.Node nodeA = list.new Node(3);
         SingleLinkedList<Integer>.Node nodeB = list.new Node(7);
         System.out.println("compare(3, 7) (expect negative): " + nodeComparator.compare(nodeA, nodeB));

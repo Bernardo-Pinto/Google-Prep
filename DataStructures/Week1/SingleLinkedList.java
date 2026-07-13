@@ -51,7 +51,7 @@ public class SingleLinkedList<T> implements Iterable<T>{
         return new NodeIterator();
     }
 
-    void add(int index, T element){
+    public void add(int index, T element){
 
         //if I add at index 0 i should just call addFirst
         if(index == 0){
@@ -74,7 +74,7 @@ public class SingleLinkedList<T> implements Iterable<T>{
         amountOfNodes++;
     }
 
-    void addFirst(T element){
+    public void addFirst(T element){
 
         Node node = new Node(element);
 
@@ -87,11 +87,11 @@ public class SingleLinkedList<T> implements Iterable<T>{
         amountOfNodes++;
     }
     
-    boolean addLast(T element){
+    public boolean addLast(T element){
         return this.add(element);
     }
 
-    boolean add(T element){
+    public boolean add(T element){
 
         Node node = new Node(element);
 
@@ -105,14 +105,14 @@ public class SingleLinkedList<T> implements Iterable<T>{
         return true;
     }
 
-    boolean addAll(Collection<? extends T> col){
+    public boolean addAll(Collection<? extends T> col){
         for(T v : col){
             this.add(v);
         }
         return true;
     }
 
-    boolean contains(T element){
+    public boolean contains(T element){
         Node curr = firstNode;
 
         if(curr == null) return false;
@@ -125,7 +125,10 @@ public class SingleLinkedList<T> implements Iterable<T>{
         return curr.element.equals(element);
     }
 
-    Node get(int index){
+    public Node get(int index){
+        if(this.amountOfNodes <= index){
+            throw new IndexOutOfBoundsException();
+        }
         int i = 0;
         Node curr = firstNode;
         while(i != index){
@@ -135,18 +138,22 @@ public class SingleLinkedList<T> implements Iterable<T>{
         return curr;
     }
 
-    int indexOf(T element){
+    public int indexOf(T element){
         int i = 0;
         Node curr = firstNode;
-        while(!curr.element.equals(element)){
+        while(curr != null && !curr.element.equals(element)){
             curr = curr.next;
             i++;
         }
-        return i;
+        if(curr == null) return -1;
+        else return i;
     }
 
-    Node removeByIndex(int index){
-        
+    public Node removeByIndex(int index){
+        if(this.amountOfNodes <= index){
+            throw new IndexOutOfBoundsException();
+        }
+
         if(index == 0){
             Node first = this.firstNode;
             this.removeFirst();
@@ -172,7 +179,7 @@ public class SingleLinkedList<T> implements Iterable<T>{
         return curr;
     }
 
-    boolean remove(T element){
+    public boolean remove(T element){
 
         Node curr = this.firstNode;
         Node prev = null;
@@ -209,14 +216,17 @@ public class SingleLinkedList<T> implements Iterable<T>{
         return false;
     }
 
-    Node removeFirst(){
+    public Node removeFirst(){
+        if(size() == 0) return null;
+
         Node first = this.firstNode;
         this.firstNode = first.next;
         if(this.firstNode == null) this.lastNode = null;
         amountOfNodes--;
         return first;
     }
-    Node removeLast(){
+
+    public Node removeLast(){
 
         Node curr = firstNode;
         Node prev = null;
@@ -238,7 +248,7 @@ public class SingleLinkedList<T> implements Iterable<T>{
         return curr;
     }
 
-    int size(){
+    public int size(){
         return amountOfNodes;
     }
 

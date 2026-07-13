@@ -2,20 +2,18 @@ package DataStructures.Week3;
 
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Collections;
 import java.util.Queue;
 
 public class AdjacencyListGraph {
 
 
-    private class Edge{
+    public class Edge{
         public int weight;
         public String dest;
         public Edge(int w, String dest){
@@ -31,13 +29,16 @@ public class AdjacencyListGraph {
     }
 
     public boolean addVertex(String vertex){
+        if(vertex == null || vertex.isEmpty()) throw new IllegalArgumentException();
         if(this.edges.containsKey(vertex)) return false;
         this.edges.put(vertex, new ArrayList<>());
         return true;
     }
 
     public boolean addEdge(String origin, String dest, int weight){
-        if(weight < 0) return false;
+        if(origin == null || dest == null || origin.isEmpty() || dest.isEmpty() || weight<=0)
+            throw new IllegalArgumentException();
+
         List<Edge> vertexEdges = edges.get(origin);
         if(vertexEdges == null) return false;
         Edge originToDestEdge = vertexEdges.stream()
@@ -47,16 +48,16 @@ public class AdjacencyListGraph {
         if(originToDestEdge != null){
             originToDestEdge.weight = weight;
         } else {
+            if(!edges.containsKey(dest)) return false;
             vertexEdges.add(new Edge(weight, dest));
         }
         return true;
     }
 
-    public void deleteEdge(){
-
-    }
-
     public int getEdge(String origin, String dest){
+        if(origin == null || dest == null || origin.isEmpty() || dest.isEmpty())
+            throw new IllegalArgumentException();
+
         if(!edges.containsKey(origin)) return 0;
         List<Edge> originEdges = edges.get(origin);
         Edge originDestEdge = originEdges.stream()
@@ -67,7 +68,19 @@ public class AdjacencyListGraph {
         return originDestEdge.weight;
     }
 
+    public int getNumberOfVertices(){
+        return edges.size();
+    }
+
+    public List<Edge> getEdges(String vertex){
+        if(vertex == null || vertex.isEmpty()) throw new IllegalArgumentException();
+        return edges.get(vertex);
+    }
+
     public String printGraphBFS(String vertex){
+        if(vertex == null || vertex.isEmpty())
+            throw new IllegalArgumentException();
+
         String result = "";
         Queue<String> queue = new LinkedList<>();
         HashSet<String> visited = new HashSet<>();
@@ -138,7 +151,7 @@ public class AdjacencyListGraph {
         return false;
     }
 
-    private boolean isDCyclicDFS(){
+    public boolean isDCyclicDFS(){
         HashSet<String> visited = new HashSet<>();
         HashSet<String> path = new HashSet<>();
         for(String vertex : edges.keySet()){
@@ -271,6 +284,8 @@ public class AdjacencyListGraph {
 
 
     public List<String> dijkstra(String src, String dest){
+        if(src == null || dest == null || src.isEmpty() || dest.isEmpty()) throw new IllegalArgumentException();
+        if(!edges.containsKey(src)) return new ArrayList<>();
         //need: 
         // parents (where did I come from): HashMap<String,String>
         // edges: Map<List<Edge>>
@@ -373,11 +388,12 @@ public class AdjacencyListGraph {
     }
 
     public static void main(String[] args){
-        // testSubGraphs();
-        // testTraversal();
-        // testCycleDFS();
-        // testCycleUnion();
-        //testDijkstra();
+        testSubGraphs();
+        testTraversal();
+        testCycleDFS();
+        testCycleUnion();
+        testShortestPath();
+        testDijkstra();
         testTopologicalSort();
     }
 
