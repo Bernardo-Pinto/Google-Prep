@@ -1,4 +1,4 @@
-package Problems.DP;
+package LeetCodeProblems.DP;
 
 public class WordBreak {
     /*

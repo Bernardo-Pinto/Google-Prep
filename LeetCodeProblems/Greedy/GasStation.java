@@ -1,4 +1,4 @@
-package Problems.Greedy;
+package LeetCodeProblems.Greedy;
 
 import java.util.Map;
 import java.util.PriorityQueue;

@@ -7,7 +7,7 @@ public abstract class LibraryItem {
     //internal system id
     private UUID id;
     // libraryId that owns this item
-    private UUID currentLibraryId;
+    //private UUID currentLibraryId;
     private UUID clientUsingThis;
 
     //bunch of other fields such as:
@@ -19,7 +19,7 @@ public abstract class LibraryItem {
 
     protected LibraryItem(UUID currentLibraryId){
         this.id = UUID.randomUUID();
-        this.currentLibraryId = currentLibraryId;
+        //this.currentLibraryId = currentLibraryId;
     }
     public UUID getId(){
         return this.id;

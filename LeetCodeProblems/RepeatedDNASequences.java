@@ -1,6 +1,7 @@
-package Problems;
+package LeetCodeProblems;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +16,8 @@ public class RepeatedDNASequences {
         if(s.length()<11) return new ArrayList<>();
         Map<Long,String> sequences = new HashMap<>();
         HashSet<String> seen = new HashSet<>();
+        List<List<Integer>> arr = new ArrayList<>();
+        arr.add(Arrays.asList(1,2));
 
         long highPow = 1;
         for (int i = 0; i < 10; i++) {

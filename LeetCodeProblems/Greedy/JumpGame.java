@@ -1,4 +1,4 @@
-package Problems.Greedy;
+package LeetCodeProblems.Greedy;
 
 public class JumpGame {
     /*

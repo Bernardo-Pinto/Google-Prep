@@ -1,4 +1,4 @@
-package Problems.DP;
+package LeetCodeProblems.DP;
 
 import java.util.Arrays;
 

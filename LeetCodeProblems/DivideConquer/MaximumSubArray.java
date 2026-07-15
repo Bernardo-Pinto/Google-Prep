@@ -1,4 +1,4 @@
-package Problems.DivideConquer;
+package LeetCodeProblems.DivideConquer;
 
 import java.util.List;
 

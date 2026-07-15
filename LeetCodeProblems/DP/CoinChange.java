@@ -1,4 +1,4 @@
-package Problems.DP;
+package LeetCodeProblems.DP;
 
 public class CoinChange {
     public static int coinChange(int[] coins, int amount) {
