@@ -19,6 +19,8 @@ import java.util.*;
  *      4   5
  *  serialize → "1,2,null,null,3,4,null,null,5,null,null" (or your format)
  *  deserialize → original tree
+ * 
+ * BFS preorder: "1,2,3,null,null,4,5,null,null,null,null"
  *
  * Example 2:
  *  Input: root = []  →  serialize = "null", deserialize = null
@@ -27,8 +29,7 @@ import java.util.*;
  *  - Number of nodes: [0, 10^4]
  *  - -1000 <= Node.val <= 1000
  *
- * Hint: BFS (level-order) or preorder DFS both work.
- *  With DFS preorder: serialize writes val or "null", deserialize uses a queue of tokens.
+
  */
 public class SerializeDeserialize {
 
@@ -39,13 +40,52 @@ public class SerializeDeserialize {
     }
 
     public static String serialize(TreeNode root) {
-        // TODO: implement
-        return "";
+
+        Queue<Optional<TreeNode>> queue =  new ArrayDeque<>();
+        queue.offer(Optional.ofNullable(root));
+
+        StringBuilder sb =  new StringBuilder();
+        while(!queue.isEmpty()){
+            TreeNode node = queue.poll().orElse(null);
+            sb.append(',');
+            if(node == null) {
+                sb.append("null");
+                continue;
+            }
+            else{
+                sb.append(node.val);
+            }
+
+            queue.add(Optional.ofNullable(node.left));
+            queue.add(Optional.ofNullable(node.right));
+        }
+
+        sb.delete(0, 1);
+        return sb.toString();
     }
 
     public static TreeNode deserialize(String data) {
-        // TODO: implement
-        return null;
+
+        if(data.equals("null")) return null;
+
+        Queue<String> tokens =  new LinkedList<>(Arrays.asList(data.split(",")));
+        TreeNode root = new TreeNode(Integer.parseInt(tokens.poll()));
+        Queue<TreeNode> nodes =  new LinkedList<>();
+        nodes.offer(root);
+        while(!nodes.isEmpty()){
+            TreeNode node =  nodes.poll();
+            String left = tokens.poll();
+            String right =  tokens.poll();
+            if(!left.equals("null")){
+                node.left = new TreeNode(Integer.valueOf(left));
+                nodes.offer(node.left);
+            } 
+            if(!right.equals("null")){
+                node.right = new TreeNode(Integer.valueOf(right));
+                nodes.offer(node.right);
+            }
+        }
+        return root;
     }
 
     // ---------- helpers ----------
@@ -105,3 +145,8 @@ public class SerializeDeserialize {
         roundTrip(leftSkewed);
     }
 }
+
+/*
+ * Hint: BFS (level-order) or preorder DFS both work.
+ *  With DFS preorder: serialize writes val or "null", deserialize uses a queue of tokens.
+ *  */

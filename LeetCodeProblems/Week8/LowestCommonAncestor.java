@@ -23,6 +23,17 @@ import java.util.*;
  * Example 2:
  *  root = [2,1], p=2, q=1  →  LCA = 2
  *
+ * 3:
+ *  *       6
+ *         / \
+ *        2   8
+ *       / \ / \
+ *      0  4 7  9
+ *        / \    \
+ *       3   5   12
+ *              /  \
+ *             1   7
+ * 
  * Constraints:
  *  - Number of nodes: [2, 10^5]
  *  - -10^9 <= Node.val <= 10^9
@@ -37,10 +48,20 @@ public class LowestCommonAncestor {
         TreeNode(int val) { this.val = val; }
     }
 
+    static HashSet<Integer> toFind;
+    static TreeNode lca;
+    static TreeNode lastAncestor;
     public static TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
-        // TODO: implement
-        return null;
+        if(root == null) return null;
+        if(root == p || root == q) return root;
+
+        TreeNode left = lowestCommonAncestor(root.left, p, q);
+        TreeNode right = lowestCommonAncestor(root.right, p, q);        
+
+        if(left != null && right != null) return root;
+        return left != null ? left : right;
     }
+
 
     // ---------- helpers ----------
 

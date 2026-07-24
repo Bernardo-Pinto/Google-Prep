@@ -1,5 +1,8 @@
 package LeetCodeProblems.Week8;
 
+import java.util.ArrayDeque;
+import java.util.Queue;
+
 /**
  * LeetCode #200 - Number of Islands
  *
@@ -34,8 +37,31 @@ package LeetCodeProblems.Week8;
 public class NumberOfIslands {
 
     public static int numIslands(char[][] grid) {
-        // TODO: implement
-        return 0;
+        Queue<int[]> queue =  new ArrayDeque<>();
+        int numIslands = 0;
+        for(int i=0;i<grid.length;i++){
+            for(int j=0;j<grid[i].length;j++){
+                if(grid[i][j] == '0') continue;
+                numIslands++; // found land, increase island count
+                queue.add(new int[]{i,j});
+                while(!queue.isEmpty()){
+                    int[] pos = queue.poll();
+                    int row = pos[0];
+                    int col = pos[1];
+                    boolean inBounds = row < grid.length && row >=0;
+                    inBounds = inBounds && col >=0 && col < grid[row].length; 
+                    if(!inBounds || grid[row][col] == '0') continue;
+                    
+                    //this grid posision is land ('1'). explore down,right directions while they are land, 
+                    // and set them to water so we dont process them again.
+                    grid[row][col] = '0';
+                    queue.add(new int[]{row+1,col}); // down
+                    queue.add(new int[]{row,col+1}); // right
+                    //don't add up and left, since that is where we came from, and they are marked as water now
+                }
+            }
+        }
+        return numIslands;
     }
 
     public static void main(String[] args) {
@@ -61,7 +87,7 @@ public class NumberOfIslands {
             {'1','1'}
         }));
 
-        // Expected: 4  (diagonal cells are NOT connected)
+        // Expected: 5  (diagonal cells are NOT connected — each '1' is isolated)
         System.out.println(numIslands(new char[][]{
             {'1','0','1'},
             {'0','1','0'},

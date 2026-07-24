@@ -31,9 +31,27 @@ import java.util.*;
  */
 public class Permutations {
 
+    static List<List<Integer>> permutations;
     public static List<List<Integer>> permute(int[] nums) {
-        // TODO: implement
-        return new ArrayList<>();
+        permutations =  new ArrayList<>();
+        permuter(nums, new ArrayList<>(), new boolean[nums.length]);
+        return permutations;
+    }
+
+    private static void permuter(int[] nums, List<Integer> path,boolean[] inPath){
+        // base case: path is complete (path size is equal to nums length)
+        if(path.size() == nums.length){
+            permutations.add(new ArrayList<>(path));
+        }
+
+        for(int i=0;i<nums.length;i++){
+            if(inPath[i]) continue;
+            inPath[i] = true;
+            path.add(nums[i]);
+            permuter(nums, path, inPath);
+            path.removeLast();
+            inPath[i] = false;
+        }
     }
 
     public static void main(String[] args) {

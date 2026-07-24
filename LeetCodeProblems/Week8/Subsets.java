@@ -30,9 +30,26 @@ import java.util.*;
  */
 public class Subsets {
 
+    static List<List<Integer>> combinations;
     public static List<List<Integer>> subsets(int[] nums) {
-        // TODO: implement
-        return new ArrayList<>();
+        combinations =  new ArrayList<>();
+        combinations.add(new ArrayList<>()); // k=0
+        for(int k=1;k<=nums.length;k++) combiner(nums, new ArrayList<>(), k, 0);
+        return combinations;
+    }
+
+    private static void combiner(int[] numbers, List<Integer> path, int k, int it){
+        if(path.size() == k){
+            combinations.add(new ArrayList<>(path));
+            return;
+        }
+
+        int missing = k-path.size()-1; //-1 because we are working with indexes
+        for(int i= it;i+missing<numbers.length; i++){
+            path.add(numbers[i]);
+            combiner(numbers, path, k, i+1);
+            path.removeLast();
+        }
     }
 
     public static void main(String[] args) {

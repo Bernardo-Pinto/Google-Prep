@@ -1,5 +1,12 @@
 package LeetCodeProblems.Week8;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Queue;
+
+
 /**
  * LeetCode #994 - Rotting Oranges
  *
@@ -39,8 +46,56 @@ package LeetCodeProblems.Week8;
 public class RottingOranges {
 
     public static int orangesRotting(int[][] grid) {
-        // TODO: implement
-        return 0;
+        Queue<int[]> queue = new ArrayDeque<>();
+        int totalNormalOranges = 0;
+        for(int i=0;i<grid.length;i++){
+            for(int j=0;j<grid[i].length;j++){
+                if(grid[i][j] == 1) totalNormalOranges++;
+                else if(grid[i][j] == 2) queue.add(new int[]{i,j});
+            }
+        }
+        if(totalNormalOranges == 0) return 0;
+        if(queue.size() == 0) return -1;
+
+        //BFS from all rotten "at once"
+        boolean[][] seen =  new boolean[grid.length][grid[0].length];
+        //minutes -1 because we consider the very first iteration with the seeded rotten oranges
+        // to be the "start" of the state: minute 0, with all rotten oranges explored
+        int minutes = -1;
+        while (!queue.isEmpty()) {
+
+            minutes++;
+            int orangesInThisMinute = queue.size();
+            for(int k=0;k<orangesInThisMinute;k++){
+                int[] pos = queue.poll();
+                int i = pos[0];
+                int j = pos[1];
+    
+                if(seen[i][j]) continue; //might have duplicates in queue and been updated since then 
+                seen[i][j] = true;
+
+                if(grid[i][j] == 1) totalNormalOranges--;
+
+                if(inBounds(grid, i, j+1) && shouldExplore(grid, seen, i, j+1)) 
+                    queue.add(new int[]{i,j+1}); //right
+                if(inBounds(grid, i+1, j) && shouldExplore(grid, seen, i+1, j)) 
+                    queue.add(new int[]{i+1,j}); //down
+                if(inBounds(grid, i, j-1) && shouldExplore(grid, seen, i, j-1)) 
+                    queue.add(new int[]{i,j-1}); // left
+                if(inBounds(grid, i-1, j) && shouldExplore(grid, seen, i-1, j)) 
+                    queue.add(new int[]{i-1,j}); // up
+            }
+        }
+        
+        return totalNormalOranges == 0 ? minutes : -1;
+    }
+
+    private static boolean inBounds(int[][] grid, int i, int j){
+        return i < grid.length && i >= 0 && j < grid[i].length && j >= 0;
+    }
+
+    private static boolean shouldExplore(int[][] grid, boolean[][] seen, int i, int j){
+        return !seen[i][j] && grid[i][j] == 1;
     }
 
     public static void main(String[] args) {

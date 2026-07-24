@@ -1,5 +1,10 @@
 package LeetCodeProblems.Week8;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+
 /**
  * LeetCode #207 - Course Schedule
  *
@@ -33,7 +38,39 @@ package LeetCodeProblems.Week8;
 public class CourseSchedule {
 
     public static boolean canFinish(int numCourses, int[][] prerequisites) {
-        // TODO: implement
+        HashMap<Integer,List<Integer>> depen = new HashMap<>();
+        for(int i=0;i<prerequisites.length;i++){
+            if(!depen.containsKey(prerequisites[i][0])){
+                List<Integer> list =  new ArrayList<>();
+                list.add(prerequisites[i][1]);
+                depen.put(prerequisites[i][0],list);
+            }else {
+                List<Integer> list = depen.get(prerequisites[i][0]);
+                list.add(prerequisites[i][1]);
+            }
+        }
+        HashSet<Integer> visited =  new HashSet<>();
+        for(int i=0;i<prerequisites.length;i++){
+            HashSet<Integer> path =  new HashSet<>();
+            if(isCyclic(prerequisites[i][0], depen, path, visited)) return false;
+        }
+
+        return true;
+    }
+
+    private static boolean isCyclic(int course, HashMap<Integer,List<Integer>> depen, 
+        HashSet<Integer> path, HashSet<Integer> visited){
+            if(path.contains(course)) return true;
+            if(visited.contains(course)) return false;
+            path.add(course);
+
+            if(!depen.containsKey(course)) return false;
+            List<Integer> dependencies = depen.get(course);
+            for(Integer i : dependencies){
+                if(isCyclic(i, depen, path, visited)) return true;
+            }
+        path.remove(course);
+        visited.add(course);
         return false;
     }
 
