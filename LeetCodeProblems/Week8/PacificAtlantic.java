@@ -13,10 +13,9 @@ import java.util.*;
  * Water flows off the bottom and right edges into the Atlantic Ocean.
  *
  * Return a list of coordinates [r, c] where water can flow to BOTH oceans.
- *
- * Key insight: instead of simulating water flowing down from every cell,
- * do multi-source BFS *uphill* from each ocean's border simultaneously.
- * Cells reachable from both BFS runs are the answer.
+ * aka : cell has lower height than either:
+ *  -> top and right
+ *  -> bottom and left
  *
  * Example 1:
  *  heights = [[1,2,2,3,5],
@@ -63,3 +62,9 @@ public class PacificAtlantic {
         System.out.println(pacificAtlantic(new int[][]{{1,1,1,1}}));
     }
 }
+
+/*
+ * Key insight: instead of simulating water flowing down from every cell,
+ * do multi-source BFS *uphill* from each ocean's border simultaneously.
+ * Cells reachable from both BFS runs are the answer.
+ *  */

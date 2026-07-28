@@ -40,8 +40,32 @@ import java.util.*;
 public class CourseScheduleII {
 
     public static int[] findOrder(int numCourses, int[][] prerequisites) {
-        // TODO: implement
-        return new int[]{};
+        // unlocks: prereq → courses it enables (forward direction = O(V+E))
+        HashMap<Integer, List<Integer>> unlocks = new HashMap<>();
+        int[] inDegree = new int[numCourses];
+
+        for (int[] pre : prerequisites) {
+            int course = pre[0], prereq = pre[1];
+            unlocks.computeIfAbsent(prereq, k -> new ArrayList<>()).add(course);
+            inDegree[course]++;
+        }
+
+        Queue<Integer> queue = new ArrayDeque<>();
+        for (int i = 0; i < numCourses; i++) {
+            if (inDegree[i] == 0) queue.add(i);
+        }
+
+        List<Integer> result = new ArrayList<>();
+        while (!queue.isEmpty()) {
+            int course = queue.poll();
+            result.add(course);
+            for (int dependent : unlocks.getOrDefault(course, List.of())) {
+                if (--inDegree[dependent] == 0) queue.add(dependent);
+            }
+        }
+
+        if (result.size() != numCourses) return new int[]{};
+        return result.stream().mapToInt(Integer::intValue).toArray();
     }
 
     public static void main(String[] args) {

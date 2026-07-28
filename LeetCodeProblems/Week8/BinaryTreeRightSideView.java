@@ -38,8 +38,24 @@ public class BinaryTreeRightSideView {
     }
 
     public static List<Integer> rightSideView(TreeNode root) {
-        // TODO: implement
-        return new ArrayList<>();
+        if(root == null) return new ArrayList<>();
+
+        Queue<TreeNode> queue =  new ArrayDeque<>();
+        List<Integer> result = new ArrayList<>();
+
+        queue.offer(root);
+        while(!queue.isEmpty()){
+            int levelSize = queue.size();
+            for(int i=1;i<=levelSize;i++){
+                TreeNode node = queue.poll();
+                if(i == levelSize) result.add(node.val);
+
+                if(node.left != null) queue.offer(node.left);
+                if(node.right != null) queue.offer(node.right);
+            }
+        }
+
+        return result;
     }
 
     // --- helpers ---
@@ -61,19 +77,19 @@ public class BinaryTreeRightSideView {
     }
 
     public static void main(String[] args) {
-        // [1,3,4]
+        // Expected: [1,3,4]  — 3 is rightmost on level 2, 4 on level 3
         System.out.println(rightSideView(build(1, 2, 3, null, 5, null, 4)));
 
-        // [1,2]  — left-only child visible from right side on level 2
+        // Expected: [1,2]  — 2 is the only node on level 2, visible from right
         System.out.println(rightSideView(build(1, 2)));
 
-        // []
+        // Expected: []  — empty tree
         System.out.println(rightSideView(null));
 
-        // [1]
+        // Expected: [1]  — single node
         System.out.println(rightSideView(build(1)));
 
-        // Deep left-skewed: [1,2,3,4]
+        // Expected: [1,2,3]  — left-skewed: each level has exactly one node
         //     1
         //    /
         //   2

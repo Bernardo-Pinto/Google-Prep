@@ -33,9 +33,23 @@ import java.util.*;
  */
 public class CombinationSum {
 
+    static List<List<Integer>> result;
     public static List<List<Integer>> combinationSum(int[] candidates, int target) {
-        // TODO: implement
-        return new ArrayList<>();
+        result = new ArrayList<>();
+        combiner(candidates, target, 0, 0, new ArrayList<>());
+        return result;
+    }
+
+    private static void combiner(int[] candidates, int target, int it, int sum, List<Integer> path){
+
+        if(sum == target) result.add(new ArrayList<>(path));
+        else if(sum > target) return;
+
+        for(int i=it;i<candidates.length;i++){
+            path.add(candidates[i]);
+            combiner(candidates, target, i, sum+candidates[i], path);
+            path.removeLast();
+        }
     }
 
     public static void main(String[] args) {
