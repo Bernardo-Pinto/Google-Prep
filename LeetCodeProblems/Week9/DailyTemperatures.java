@@ -28,8 +28,15 @@ import java.util.*;
 public class DailyTemperatures {
 
     public static int[] dailyTemperatures(int[] temperatures) {
-        // TODO: implement with monotonic stack
-        return new int[]{};
+        Stack<Integer> positions = new Stack<>();
+        int[] result =  new int[temperatures.length];
+        for(int i=0;i<temperatures.length;i++){
+            while (!positions.isEmpty() && temperatures[positions.peek()] < temperatures[i]) {
+                result[positions.peek()] = i - positions.pop();
+            }
+            positions.push(i);
+        }
+        return result;
     }
 
     public static void main(String[] args) {
