@@ -9,9 +9,8 @@ public class ContainerMostWater {
         int maxArea = 0;
         while(left<right){
             int currArea = (right-left) * Math.min(height[left],height[right]); 
-            if(currArea>maxArea){
-                maxArea = currArea;
-            }
+            if(currArea>maxArea) maxArea = currArea;
+            
             if(height[left] < height[right]){
                 left++;
             } else {
